@@ -1,0 +1,29 @@
+# Build output
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TLS material is generated locally (scripts/generate-dev-certs.sh) and never committed
+certs/*.p12
+certs/*.jks
+certs/*.cer
+certs/*.pem
+
+# Local overrides
+config/*.local.properties
+*.log
+
+# Claude Code personal settings
+.claude/settings.local.json
