@@ -139,6 +139,13 @@ public final class SmartRailResourceServer implements NetworkService {
             out.flush();
         } catch (Exception e) {
             ctx.eventLog().log("RESOURCE", "Error handling request: " + e.getMessage());
+            try {
+                String err = "500 " + ResourceTypes.MIME_ERROR + "\nInternal error: " + e.getMessage() + "\n";
+                OutputStream errOut = client.getOutputStream();
+                errOut.write(err.getBytes(StandardCharsets.UTF_8));
+                errOut.flush();
+            } catch (IOException ignored) {
+            }
         }
     }
 }
