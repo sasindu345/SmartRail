@@ -10,7 +10,7 @@ import java.net.ContentHandlerFactory;
  * INTERPRETS the returned content. Installed once per JVM by ControllerApp with
  * {@code URLConnection.setContentHandlerFactory(...)}.
  * <ul>
- *   <li>TODO(M5) {@link ResourceTypes#MIME_TRAIN} -> TrainContentHandler,
+ *   <li>{@link ResourceTypes#MIME_TRAIN} -> TrainContentHandler,
  *       {@link ResourceTypes#MIME_TRACK} -> TrackContentHandler,
  *       {@link ResourceTypes#MIME_SCHEDULE} -> ScheduleContentHandler; anything else -> null (JDK default)</li>
  * </ul>
@@ -19,6 +19,14 @@ public final class SmartRailContentHandlerFactory implements ContentHandlerFacto
 
     @Override
     public ContentHandler createContentHandler(String mimeType) {
-        return null; // TODO(M5)
+        if (mimeType == null) {
+            return null;
+        }
+        return switch (mimeType) {
+            case ResourceTypes.MIME_TRAIN -> new TrainContentHandler();
+            case ResourceTypes.MIME_TRACK -> new TrackContentHandler();
+            case ResourceTypes.MIME_SCHEDULE -> new ScheduleContentHandler();
+            default -> null;
+        };
     }
 }

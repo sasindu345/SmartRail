@@ -1,5 +1,6 @@
 package com.smartrail.protocolhandler;
 
+import com.smartrail.common.config.NetworkConfig;
 import com.smartrail.common.resource.ResourceTypes;
 
 import java.net.URLStreamHandler;
@@ -12,15 +13,25 @@ import java.net.spi.URLStreamHandlerProvider;
  * so {@code new URI("smartrail://host:5100/trains/TR01").toURL()} finds it automatically (ServiceLoader,
  * system class path).
  * <ul>
- *   <li>TODO(M5) return a SmartRailURLStreamHandler for {@link ResourceTypes#SCHEME}, null otherwise</li>
+ *   <li>Returns a SmartRailURLStreamHandler for {@link ResourceTypes#SCHEME}, null otherwise</li>
  * </ul>
  */
 public final class SmartRailURLStreamHandlerProvider extends URLStreamHandlerProvider {
 
+    private final NetworkConfig config;
+
+    public SmartRailURLStreamHandlerProvider() {
+        this(null);
+    }
+
+    public SmartRailURLStreamHandlerProvider(NetworkConfig config) {
+        this.config = config;
+    }
+
     @Override
     public URLStreamHandler createURLStreamHandler(String protocol) {
         if (ResourceTypes.SCHEME.equals(protocol)) {
-            return null; // TODO(M5): return new SmartRailURLStreamHandler(...)
+            return new SmartRailURLStreamHandler(config);
         }
         return null;
     }
