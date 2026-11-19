@@ -7,6 +7,7 @@ import com.smartrail.common.log.EventLog;
 import com.smartrail.common.model.TrackInfo;
 import com.smartrail.common.model.TrainInfo;
 import com.smartrail.common.service.ServerContext;
+import com.smartrail.protocolhandler.SmartRailResourceServer;
 import com.smartrail.testsupport.FakeRailwayService;
 import com.smartrail.testsupport.TestConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -127,5 +128,42 @@ class RailwayAdminServiceTest {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         }
+    }
+
+    /**
+     * Standalone interactive launcher for Member 5 testing with FakeRailwayService.
+     * Lets team members test RMI administration and smartrail:// resource inspection in the GUI.
+     */
+    public static void main(String[] args) throws Exception {
+        int registryPort = Integer.parseInt(System.getProperty(ConfigKeys.RMI_REGISTRY_PORT, "2099"));
+        int servicePort = Integer.parseInt(System.getProperty(ConfigKeys.RMI_SERVICE_PORT, "2100"));
+        int resourcePort = Integer.parseInt(System.getProperty(ConfigKeys.SMARTRAIL_RESOURCE_PORT, "5100"));
+
+        NetworkConfig config = TestConfig.withOverrides(
+                ConfigKeys.RMI_REGISTRY_PORT, String.valueOf(registryPort),
+                ConfigKeys.RMI_SERVICE_PORT, String.valueOf(servicePort),
+                ConfigKeys.SMARTRAIL_RESOURCE_PORT, String.valueOf(resourcePort));
+
+        RailwayData data = RailwayData.load(Path.of("config/railway-data.properties"));
+        FakeRailwayService fake = new FakeRailwayService(data);
+        EventLog log = new EventLog(500);
+
+        ServerContext ctx = new ServerContext(config, data, log, fake, null, null, null);
+
+        RmiAdminServer rmiServer = new RmiAdminServer(ctx);
+        rmiServer.start();
+
+        SmartRailResourceServer resourceServer = new SmartRailResourceServer(ctx);
+        resourceServer.start();
+
+        System.out.println("==================================================================");
+        System.out.println("SmartRail Member 5 Standalone Test Server Running!");
+        System.out.println("Backend:      FakeRailwayService (loaded config/railway-data.properties)");
+        System.out.println("RMI Admin:    " + rmiServer.endpoint());
+        System.out.println("smartrail://: " + resourceServer.endpoint());
+        System.out.println("Press Ctrl+C to stop.");
+        System.out.println("==================================================================");
+
+        Thread.currentThread().join();
     }
 }
