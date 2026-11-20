@@ -13,10 +13,10 @@ Automated tests: `mvn verify` (JUnit 5, one test class set per member, `testsupp
 | 5 | Wrong host / port | clear message, UI stays responsive | 2 | `TrainClientTest` | | |
 | 6 | IPv4 / IPv6 resolution | address type shown correctly | 2 | `ServerAddressResolverTest` | | |
 | 7 | Reconnect | client reconnects after server restart within configured attempts | 2 | `TrainClientTest` | | |
-| 8 | UDP discovery | reply with host + ports | 3 | `DiscoveryTest` | | |
-| 9 | UDP discovery timeout | "no response" + manual IP entry | 3 | `DiscoveryTest` | | |
-| 10 | Multicast alert | 2 subscribers receive one alert; fallback documented | 3 | `MulticastAlertTest` | | |
-| 11 | Heartbeat timeout | stopped client INACTIVE after `heartbeat.timeout.ms` | 3 | `HeartbeatMonitorTest` | | |
+| 8 | UDP discovery | reply with host + ports | 3 | `DiscoveryTest` | PASS | `mvn verify` green; real 2-process run: `DiscoveredServer[host=192.168.8.106, plainPort=5000, tlsPort=5443, protocolVersion=1]` (see `docs/modules/m3-udp-multicast.md`) |
+| 9 | UDP discovery timeout | "no response" + manual IP entry | 3 | `DiscoveryTest` | PASS | `timeoutReturnsEmpty` green; `UdpMulticastPanel` shows "No response - timed out. Enter the server IP manually..." |
+| 10 | Multicast alert | 2 subscribers receive one alert; fallback documented | 3 | `MulticastAlertTest` | PARTIAL | Logic verified: `nonAlertDatagramsAreIgnored` and `unicastFallbackReachesConnectedTrains` PASS. `twoSubscribersReceiveOneAlert` (real multicast send/receive) **skipped** on the dev machine used — no multicast-capable route (active VPN). Fallback documented in `docs/modules/m3-udp-multicast.md`; re-run on the real demo LAN to get a full PASS |
+| 11 | Heartbeat timeout | stopped client INACTIVE after `heartbeat.timeout.ms` | 3 | `HeartbeatMonitorTest` | PASS | `silentTrainIsMarkedInactive` and `heartbeatKeepsTrainAlive` green against `FakeRailwayService`; full server-side trigger (`RailwayServiceImpl.markInactive`) blocked on Member 1's implementation |
 | 12 | TLS trusted certificate | handshake succeeds; protocol/cipher shown | 4 | `TlsChannelTest` | | |
 | 13 | TLS untrusted certificate | connection rejected, no bypass | 4 | `TlsChannelTest` | | |
 | 14 | URLConnection resource | schedules/tracks fetched; 404 handled | 4 | `ResourceHttpServerTest` | | |
