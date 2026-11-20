@@ -5,7 +5,7 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 
 **Your files:** `udp/DiscoveryResponder`, `udp/DiscoveryClient`, `udp/DiscoveredServer`,
 `multicast/MulticastAlertPublisher`, `multicast/MulticastAlertSubscriber`, `heartbeat/HeartbeatMonitor`,
-`heartbeat/HeartbeatSender`, `ui/panels/UdpMulticastPanel`, tests in
+`heartbeat/HeartbeatSender`, tests in
 `src/test/java/com/smartrail/{udp,multicast,heartbeat}/`, `docs/modules/m3-udp-multicast.md`.
 
 **You provide:** `AlertService` + `HeartbeatTracker` (used by M1), `DiscoveredServer` (used by M2's panel).
@@ -39,9 +39,17 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 - [ ] C7 with M1/M5: `reportObstruction` → all train windows show the alert
 - [ ] Test on the real LAN: discovery across machines; multicast or fallback
 
-## Phase 4 — UI & evidence
-- [ ] `UdpMulticastPanel`: Discover button + result/timeout message; Subscribe/Unsubscribe; received alerts list with time and sender IP
-- [ ] Screenshots/logs: discovery request + reply, two clients receiving one alert, INACTIVE after timeout
+## Phase 4 — Evidence
+
+> **UI work moved out.** The Alerts and Network screens are now UI issue **UI-3**, against
+> `docs/ui/control-center-spec.md`.
+
+- [x] *(superseded by UI-3, work done)* `UdpMulticastPanel`: Discover button + result/timeout message;
+      Subscribe/Unsubscribe; received alerts list with time. Note: sender IP is not shown —
+      `MulticastAlertSubscriber`'s callback type is the frozen `Consumer<Message>`, which does not carry
+      the datagram's source address (documented in the module doc).
+- [ ] Evidence for the report: discovery request + reply (done, see module doc), two clients receiving
+      one alert (needs a LAN with multicast), INACTIVE after timeout (done, `HeartbeatMonitorTest`)
 
 ## Phase 5 — Test, docs, demo
 - [ ] Fill `docs/modules/m3-udp-multicast.md` (incl. multicast-blocked note + fallback)
@@ -55,3 +63,4 @@ a stopped train becomes INACTIVE automatically.
 
 ## Out of scope
 Sending train telemetry over UDP/multicast, reliable-multicast protocols, NAT traversal.
+UI screens are tracked separately in UI-3.

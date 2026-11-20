@@ -5,7 +5,7 @@ certificate + host name validation); `URL` / `URLConnection` / `HttpURLConnectio
 HTTP service.
 
 **Your files:** `tls/SslContextFactory`, `tls/TlsTrainServer`, `tls/TlsTrainConnection`, `tls/TlsSocketFactory`,
-`urlconnection/ResourceHttpServer`, `urlconnection/ResourceClient`, `ui/panels/TlsResourcePanel`,
+`urlconnection/ResourceHttpServer`, `urlconnection/ResourceClient`,
 `scripts/generate-dev-certs.sh`, tests in `src/test/java/com/smartrail/{tls,urlconnection}/`,
 `docs/modules/m4-tls-urlconnection.md`.
 
@@ -40,9 +40,13 @@ HTTP service.
 - [ ] C8 with M5: `fetchContent("tracks")` returns `List<TrackInfo>`
 - [ ] Two machines: certificate SAN includes the server LAN IP
 
-## Phase 4 — UI & evidence
-- [ ] `TlsResourcePanel`: resource picker + Fetch (status, Content-Type, body, typed view); TLS check button showing protocol, cipher suite, peer certificate subject/validity
-- [ ] Screenshots: successful handshake details, rejected untrusted cert, schedule fetched via URLConnection
+## Phase 4 — Evidence
+
+> **UI work moved out.** The Security & Resources screen is now UI issue **UI-4**, against
+> `docs/ui/control-center-spec.md`.
+
+- [ ] Evidence for the report: successful handshake details, rejected untrusted cert, schedule fetched
+      via URLConnection
 - [ ] Optional only if time permits: HTTPS for the resource service using the same `SSLContext` (`HttpsServer`)
 
 ## Phase 5 — Test, docs, demo
@@ -57,3 +61,4 @@ reads schedules/tracks through URLConnection.
 
 ## Out of scope
 SSLEngine, mutual TLS/client certificates, trust-all managers, a web framework, browser frontend.
+UI screens are tracked separately in UI-4.

@@ -3,6 +3,9 @@
 Every file has exactly one owner. Edit only your own files; shared files change only by team-agreed PR
 (see `git-workflow.md`). Paths are relative to `src/main/java/com/smartrail/` unless stated.
 
+Files marked **(new)** below do not exist yet: they are the Control Center UI files pre-approved in
+`docs/ui/control-center-spec.md` §6, and only their listed owner may create them.
+
 ## Shared (frozen after Phase 0 — changes need all 5 approvals)
 
 | File | Purpose |
@@ -13,9 +16,9 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `common/service/*.java` | cross-member interfaces + `ServerContext` |
 | `common/resource/*.java` | resource MIME types, paths, codec, resolver |
 | `common/log/EventLog.java` | event log |
-| `app/ServerApp.java`, `TrainClientApp.java`, `ControllerApp.java` | launchers / wiring |
+| `app/ServerApp.java`, `TrainClientApp.java`, `ControllerApp.java` | launchers / wiring (`ControlCenterApp.java` is M2's) |
 | `ui/shell/UiThreads.java` | EDT / background helper |
-| `config/*.properties`, `pom.xml`, `scripts/run.sh`, `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/protocol.md`, `docs/configuration.md` | project contracts |
+| `config/*.properties`, `pom.xml`, `scripts/run.sh`, `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/protocol.md`, `docs/configuration.md`, `docs/ui/*.md` | project contracts |
 | `src/test/java/com/smartrail/testsupport/*`, `src/test/java/com/smartrail/common/**` | shared test support |
 
 ## Member 1 — Java NIO server & coordination
@@ -30,7 +33,10 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `coordination/TrainRegistry.java` | client registry |
 | `coordination/TrackReservationService.java` | atomic check-and-reserve |
 | `coordination/RouteService.java` | route assignment |
-| `ui/panels/NioServerPanel.java` | server panel |
+| `ui/panels/NioServerPanel.java` | Overview screen (map + trains + selected train) |
+| `ui/panels/NetworkMapPanel.java` | network map widget (`Graphics2D`) |
+| `ui/panels/TrackSectionsPanel.java` | sections table + reservation conflict demo |
+| `ui/panels/EventLogPanel.java` | event log screen |
 | tests: `nio/*Test`, `coordination/*Test` · doc: `docs/modules/m1-nio-server.md` | |
 
 ## Member 2 — TCP client, IP addressing & app shell
@@ -42,8 +48,14 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `tcpclient/TrainClient.java` | TCP client, I/O streams, reader thread, reconnect |
 | `tcpclient/TrainClientListener.java` | client callbacks |
 | `tcpclient/TrainSimulator.java` | request/response driven train behaviour |
-| `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java` | window shells (host others' panels) |
-| `ui/panels/TcpClientPanel.java` | train client panel |
+| `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java` | legacy window shells (LAN run) |
+| `ui/shell/ControlCenterWindow.java` | the single demo window |
+| `ui/shell/SimulationController.java` | starts/stops the in-process server services |
+| `ui/shell/TrainProcessSupervisor.java` | spawns train child JVMs; the ONLY place `ProcessBuilder` is used |
+| `app/ControlCenterApp.java` | Control Center launcher |
+| `ui/theme/**`, `ui/components/**` | FlatLaf theme tokens + shared Card/StatusPill/NavSidebar/TopBar/bars/TableStyles |
+| `ui/panels/TcpClientPanel.java` | train connection panel |
+| `ui/panels/TrainsPanel.java` | Trains screen + per-train child-process consoles |
 | tests: `tcpclient/*Test` · doc: `docs/modules/m2-tcp-client.md` | |
 
 ## Member 3 — UDP, multicast & heartbeat
@@ -57,7 +69,8 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `multicast/MulticastAlertSubscriber.java` | `joinGroup` / `leaveGroup` with `NetworkInterface` |
 | `heartbeat/HeartbeatMonitor.java` | timeout detection |
 | `heartbeat/HeartbeatSender.java` | periodic heartbeat |
-| `ui/panels/UdpMulticastPanel.java` | discovery/alerts panel |
+| `ui/panels/UdpMulticastPanel.java` | Network screen (discovery, services & ports) |
+| `ui/panels/AlertsPanel.java` | Alerts screen (multicast feed) |
 | tests: `udp/*Test`, `multicast/*Test`, `heartbeat/*Test` · doc: `docs/modules/m3-udp-multicast.md` | |
 
 ## Member 4 — TLS & URL/URLConnection
@@ -70,7 +83,7 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `tls/TlsSocketFactory.java` | `SSLSocket`, host name verification |
 | `urlconnection/ResourceHttpServer.java` | HTTP resource endpoints |
 | `urlconnection/ResourceClient.java` | `URL`, `URLConnection`, `HttpURLConnection` |
-| `ui/panels/TlsResourcePanel.java` | TLS/resource panel |
+| `ui/panels/TlsResourcePanel.java` | Security & Resources screen |
 | `scripts/generate-dev-certs.sh`, `certs/README.md` | keytool dev certificates |
 | tests: `tls/*Test`, `urlconnection/*Test` · doc: `docs/modules/m4-tls-urlconnection.md` | |
 
@@ -88,7 +101,7 @@ Every file has exactly one owner. Edit only your own files; shared files change 
 | `protocolhandler/SmartRailResourceServer.java` | server side of `smartrail://` |
 | `contenthandler/SmartRailContentHandlerFactory.java` | `ContentHandlerFactory` |
 | `contenthandler/TrainContentHandler.java`, `TrackContentHandler.java`, `ScheduleContentHandler.java` | `ContentHandler` |
-| `ui/panels/RmiHandlerPanel.java` | admin/handler panel |
+| `ui/panels/RmiHandlerPanel.java` | Administration screen (RMI + smartrail://) |
 | tests: `rmi/*Test`, `protocolhandler/*Test`, `contenthandler/*Test` · doc: `docs/modules/m5-rmi-handlers.md` | |
 
 ## Team-shared documents (anyone may edit their own section)

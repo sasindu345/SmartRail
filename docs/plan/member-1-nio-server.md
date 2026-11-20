@@ -6,7 +6,7 @@ shared state (atomic reservation).
 
 **Your files:** `nio/NioTrainServer`, `nio/NioTrainConnection`, `nio/LineFrameDecoder`,
 `coordination/TrainMessageRouter`, `coordination/RailwayServiceImpl`, `coordination/TrainRegistry`,
-`coordination/TrackReservationService`, `coordination/RouteService`, `ui/panels/NioServerPanel`,
+`coordination/TrackReservationService`, `coordination/RouteService`,
 tests in `src/test/java/com/smartrail/{nio,coordination}/`, `docs/modules/m1-nio-server.md`.
 
 **You provide:** `RailwayService` (used by M3, M4, M5, UI), `MessageHandler` (used by your NIO server and M4's TLS server).
@@ -47,10 +47,14 @@ tests in `src/test/java/com/smartrail/{nio,coordination}/`, `docs/modules/m1-nio
 - [ ] C7 with M3/M5: obstruction publishes an alert
 - [ ] Conflict demo: TR01 and TR03 (routes share SEC_A) — only one is granted
 
-## Phase 4 — UI & evidence
-- [ ] `NioServerPanel`: trains table (id, status, location, transport, IP, last seen), sections table (state, holder), live event log
-- [ ] Refresh with `javax.swing.Timer`; event log via `EventLog` listener + `UiThreads.onEdt`
-- [ ] Screenshots: 3 trains connected; a `SECTION_DENIED`; server log of a partial/merged read test
+## Phase 4 — Evidence
+
+> **UI work moved out.** The Overview, Track Sections and Event Log screens (including the network
+> map) are now tracked in UI issue **UI-1**, against `docs/ui/control-center-spec.md`. Do not build
+> UI here; finish the networking phases first.
+
+- [ ] Evidence for the report: 3 trains connected on one selector thread; a `SECTION_DENIED`; server
+      log of a partial/merged read test
 
 ## Phase 5 — Test, docs, demo
 - [ ] Fill `docs/modules/m1-nio-server.md`
@@ -63,4 +67,5 @@ Three trains connect to one selector thread; framing survives split/merged reads
 section never both succeed; all M1 tests enabled and green.
 
 ## Out of scope
-SSLEngine/TLS on NIO (M4 owns TLS), persistence, thread-per-client for the NIO server, complex routing algorithms.
+SSLEngine/TLS on NIO (M4 owns TLS), persistence, thread-per-client for the NIO server, complex routing
+algorithms. UI screens are tracked separately in UI-1.

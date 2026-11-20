@@ -4,8 +4,7 @@
 resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 
 **Your files:** `tcpclient/ServerAddressResolver`, `tcpclient/PlainSocketFactory`, `tcpclient/TrainClient`,
-`tcpclient/TrainClientListener`, `tcpclient/TrainSimulator`, `ui/shell/ServerWindow`, `ui/shell/TrainClientWindow`,
-`ui/shell/ControllerDashboard`, `ui/panels/TcpClientPanel`, tests in `src/test/java/com/smartrail/tcpclient/`,
+`tcpclient/TrainClientListener`, `tcpclient/TrainSimulator`, tests in `src/test/java/com/smartrail/tcpclient/`,
 `docs/modules/m2-tcp-client.md`.
 
 **You provide:** `PlainSocketFactory` (`ClientSocketFactory`), `TrainClient` (used by M3's heartbeat sender through
@@ -43,12 +42,13 @@ resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 - [ ] C6: HOLD from RMI is shown and obeyed
 - [ ] Run 3 trains from 2 different machines on the LAN
 
-## Phase 4 — UI & shells
-- [ ] `TcpClientPanel`: host/IP + port fields (defaults from config), Resolve (shows `describe` output), Connect/Disconnect, Start simulation, status (connection, transport, route, current section), message log (→/←)
-- [ ] `ServerWindow`: services & ports tab + server interface addresses; NOT AVAILABLE services highlighted
-- [ ] `TrainClientWindow` / `ControllerDashboard`: close → disconnect + stop subscriber; consistent sizes
-- [ ] All network calls via `UiThreads.runInBackground`, UI updates via `UiThreads.onEdt`
-- [ ] Screenshots: IPv4 and IPv6 resolution, connection error message, 3 trains running
+## Phase 4 — Evidence
+
+> **UI work moved out.** The Control Center shell (window, theme, shared components,
+> `TrainProcessSupervisor`) is UI issue **UI-0**, and the Trains screen is **UI-2**, both against
+> `docs/ui/control-center-spec.md`. This issue is now the TCP client and IP addressing only.
+
+- [ ] Evidence for the report: IPv4 and IPv6 resolution, a connection error message, 3 trains running
 
 ## Phase 5 — Test, docs, demo
 - [ ] Fill `docs/modules/m2-tcp-client.md`; your rows in `docs/test-plan.md`
@@ -60,4 +60,5 @@ Two or three independent train processes connect, register, follow routes and re
 resolution and ports are visible in the UI; the UI never freezes during network calls.
 
 ## Out of scope
-Building other members' panels or backends, TLS code (M4), discovery code (M3), map/animation UI.
+Building other members' backends, TLS code (M4), discovery code (M3). The network map belongs to M1.
+Your UI work is tracked separately in UI-0 (Control Center shell) and UI-2 (Trains screen).

@@ -2,10 +2,21 @@
 
 ## Processes
 
+**Demonstration mode (default).** One window, `app/ControlCenterApp` (`scripts/run.sh controlcenter`):
+it hosts every server service in-process and launches each train as a real child JVM, so the whole
+demo runs from buttons. Specification: `docs/ui/control-center-spec.md`.
+
+| Process | Launcher | Contains |
+|---|---|---|
+| SmartRail Control Center (the demo window) | `app/ControlCenterApp` | All server services in-process + the single UI; spawns/stops train processes via `TrainProcessSupervisor` |
+| Train client (one real JVM per train, 2–3 running) | `app/TrainClientApp <TRAIN_ID>` | TCP/TLS client, simulator, heartbeat sender, alert subscriber; headless when spawned by the Control Center (`ui.train.window.enabled=false`), stdout piped into its console view |
+
+**LAN mode (unchanged).** For a multi-machine run the original launchers still work:
+
 | Process | Launcher | Contains |
 |---|---|---|
 | Central railway control server | `app/ServerApp` | All server services + server window |
-| Train client (one per train, 2–3 running) | `app/TrainClientApp <TRAIN_ID>` | TCP/TLS client, simulator, heartbeat sender, alert subscriber, train window |
+| Train client | `app/TrainClientApp <TRAIN_ID>` | as above, with its own window |
 | Controller / administrator dashboard | `app/ControllerApp` | UDP discovery, URLConnection client, RMI client, smartrail:// + content handlers |
 
 ## Server wiring (`ServerApp`)
@@ -81,6 +92,7 @@ Until Member 1's implementation is ready, other members test against `testsuppor
 | UDP discovery loop, multicast receive loop, heartbeat schedulers | M3 |
 | HttpServer executor, smartrail resource accept loop, RMI runtime threads | M4, M5 |
 | UI background work: `UiThreads.runInBackground`; UI updates: `UiThreads.onEdt` | all |
+| Child train JVMs + their stdout reader threads (`TrainProcessSupervisor`) | M2 |
 
 ## Foundational concepts covered in the report (not separate features)
 
