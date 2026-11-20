@@ -17,8 +17,13 @@
         <junit.version>5.10.2</junit.version>
     </properties>
 
-    <!-- Runtime uses JDK APIs only. Do not add dependencies without team agreement. -->
+    <!-- Runtime uses JDK APIs only plus FlatLaf (UI-0). Do not add dependencies without team agreement. -->
     <dependencies>
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.5.4</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

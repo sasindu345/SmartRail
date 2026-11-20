@@ -10,16 +10,17 @@ cd "$(dirname "$0")/.."
 role="${1:-}"
 [ $# -gt 0 ] && shift
 case "$role" in
-  server)     main=com.smartrail.app.ServerApp ;;
-  train)      main=com.smartrail.app.TrainClientApp ;;
-  controller) main=com.smartrail.app.ControllerApp ;;
-  *) echo "usage: scripts/run.sh server|train [TRAIN_ID]|controller [-Dkey=value ...]" >&2; exit 1 ;;
+  server)        main=com.smartrail.app.ServerApp ;;
+  train)         main=com.smartrail.app.TrainClientApp ;;
+  controller)    main=com.smartrail.app.ControllerApp ;;
+  controlcenter) main=com.smartrail.app.ControlCenterApp ;;
+  *) echo "usage: scripts/run.sh server|train [TRAIN_ID]|controller|controlcenter [-Dkey=value ...]" >&2; exit 1 ;;
 esac
 
-mvn -q -DskipTests compile
+mvn -q -DskipTests compile dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=target/dependency
 
 jvm=(); app=()
 for a in "$@"; do
   case "$a" in -D*) jvm+=("$a") ;; *) app+=("$a") ;; esac
 done
-exec java ${jvm[@]+"${jvm[@]}"} -cp target/classes "$main" ${app[@]+"${app[@]}"}
+exec java ${jvm[@]+"${jvm[@]}"} -cp "target/classes:target/dependency/*" "$main" ${app[@]+"${app[@]}"}
