@@ -12,6 +12,9 @@
 - Read the member's plan (`docs/plan/member-N-*.md`) before implementing; tick checklist items you finish.
 - Read the relevant contract before coding against it: `docs/protocol.md` (wire formats),
   `docs/configuration.md` (keys), `common/service/*` (interfaces).
+- For any `ui/**` work, read `docs/ui/control-center-spec.md` (what each screen must show and who owns it)
+  and `docs/ui/design-system.md` (theme tokens and shared components) first. The UI is one window whose
+  buttons trigger real network events — every widget must visualise one, and nothing is decorative.
 - The only allowed attribution in commits/PRs is none: **no `Co-Authored-By`, no "Generated with Claude Code"**.
   `.claude/settings.json` disables Claude Code's automatic attribution; do not re-add it manually.
 - Do not "improve" the architecture, add frameworks, add files or refactor shared contracts on your own
@@ -25,12 +28,18 @@
 config/                         all ports/hosts/timeouts (smartrail.properties) + railway model
 src/main/java/com/smartrail/
   common/   SHARED, frozen      config · protocol · model · service (interfaces) · resource · log
-  app/      SHARED launchers    ServerApp · TrainClientApp · ControllerApp
+  app/      SHARED launchers    ServerApp · TrainClientApp · ControllerApp · ControlCenterApp (M2)
   nio/ coordination/            Member 1  Java NIO server + coordination
   tcpclient/                    Member 2  TCP client + InetAddress
   udp/ multicast/ heartbeat/    Member 3  UDP · multicast · heartbeat
   tls/ urlconnection/           Member 4  TLS · URL/URLConnection
   rmi/ protocolhandler/ contenthandler/   Member 5  RMI · smartrail:// · content handlers
-  ui/shell (M2) · ui/panels (one panel per member)
+  ui/shell · ui/theme · ui/components (M2, except UiThreads) · ui/panels (one screen per member)
 docs/plan/                      phase checklists per member
+docs/ui/                        Control Center spec · design system · demo flow
 ```
+
+The demo runs from one window: `scripts/run.sh controlcenter`. It hosts the server services
+in-process and spawns each train as a real child JVM (`TrainProcessSupervisor`), so no terminal is
+needed during a demonstration. The older `server` / `train` / `controller` launchers still work for
+a multi-machine LAN run.

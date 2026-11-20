@@ -5,7 +5,7 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 
 **Your files:** `udp/DiscoveryResponder`, `udp/DiscoveryClient`, `udp/DiscoveredServer`,
 `multicast/MulticastAlertPublisher`, `multicast/MulticastAlertSubscriber`, `heartbeat/HeartbeatMonitor`,
-`heartbeat/HeartbeatSender`, `ui/panels/UdpMulticastPanel`, tests in
+`heartbeat/HeartbeatSender`, tests in
 `src/test/java/com/smartrail/{udp,multicast,heartbeat}/`, `docs/modules/m3-udp-multicast.md`.
 
 **You provide:** `AlertService` + `HeartbeatTracker` (used by M1), `DiscoveredServer` (used by M2's panel).
@@ -55,3 +55,4 @@ a stopped train becomes INACTIVE automatically.
 
 ## Out of scope
 Sending train telemetry over UDP/multicast, reliable-multicast protocols, NAT traversal.
+UI work is tracked separately in UI-0 (Control Center shell foundation) and UI-3 (Alerts & Network screens).

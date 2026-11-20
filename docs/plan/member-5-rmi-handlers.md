@@ -8,7 +8,7 @@ protocol handler (`URLStreamHandler` — *how* a `smartrail://` resource is acce
 `protocolhandler/SmartRailURLStreamHandlerProvider`, `protocolhandler/SmartRailURLStreamHandler`,
 `protocolhandler/SmartRailURLConnection`, `protocolhandler/SmartRailResourceServer`,
 `contenthandler/SmartRailContentHandlerFactory`, `contenthandler/{Train,Track,Schedule}ContentHandler`,
-`META-INF/services/java.net.spi.URLStreamHandlerProvider`, `ui/panels/RmiHandlerPanel`,
+`META-INF/services/java.net.spi.URLStreamHandlerProvider`,
 tests in `src/test/java/com/smartrail/{rmi,protocolhandler,contenthandler}/`, `docs/modules/m5-rmi-handlers.md`.
 
 **You provide:** remote admin API, `smartrail://` URLs, the content handler factory (used by M4's `fetchContent`).
@@ -40,9 +40,14 @@ tests in `src/test/java/com/smartrail/{rmi,protocolhandler,contenthandler}/`, `d
 - [x] C8 with M4: `ResourceClient.fetchContent` uses your factory; `smartrail://<host>:5100/trains/TR01` from the dashboard
 - [x] RMI from a second machine on the LAN (hostname setting verified)
 
-## Phase 4 — UI & evidence
-- [x] `RmiHandlerPanel`: Connect, Active trains table, Track status, Hold/Resume/Emergency stop, Report obstruction, Event log; RemoteException shown clearly
-- [x] `smartrail://` box: URL field, Open → content type + typed object's fields
+## Phase 4 — Evidence
+
+> **UI work moved out.** Restyling the admin panel into the Control Center is UI issue **UI-5**,
+> against `docs/ui/control-center-spec.md`. The panel below already works and keeps its credit.
+
+- [x] *(superseded by UI-5, work done)* `RmiHandlerPanel`: Connect, Active trains table, Track status,
+      Hold/Resume/Emergency stop, Report obstruction, Event log; RemoteException shown clearly
+- [x] *(superseded by UI-5, work done)* `smartrail://` box: URL field, Open → content type + typed object's fields
 - [x] Screenshots: remote call result, hold reaching the train, typed object from a smartrail URL
 
 ## Phase 5 — Test, docs, demo
@@ -56,4 +61,5 @@ An admin dashboard on another process (ideally another machine) calls remote met
 `smartrail://…/trains/TR01` is resolved by your own server and turned into a `TrainInfo` by your content handler.
 
 ## Out of scope
-Using RMI for telemetry, RMI security managers/codebase downloading, wrapping http:// inside the smartrail handler.
+Using RMI for telemetry, RMI security managers/codebase downloading, wrapping http:// inside the smartrail
+handler. Restyling the admin panel is tracked separately in UI-5.
