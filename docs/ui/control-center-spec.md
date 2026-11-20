@@ -62,7 +62,7 @@ boundaries. Nothing is simulated in-memory.
 `ServerApp`, `TrainClientApp` and `ControllerApp` keep working unchanged, so a multi-machine LAN
 demonstration is still possible (`scripts/run.sh server` on one laptop, trains on another).
 
-## 3. Window chrome (owner: M2)
+## 3. Window chrome (owner: M3)
 
 | Element | Content | Behaviour |
 |---|---|---|
@@ -144,7 +144,7 @@ Creating these files is explicitly allowed for the named owner; everything else 
 
 | Owner | Files |
 |---|---|
-| **M2** (UI-0) | `app/ControlCenterApp.java`; `ui/shell/ControlCenterWindow.java`, `ui/shell/SimulationController.java`, `ui/shell/TrainProcessSupervisor.java`; `ui/theme/Theme.java`; `ui/components/Card.java`, `StatusPill.java`, `NavSidebar.java`, `TopBar.java`, `SimulationControlBar.java`, `NetworkStatusBar.java`, `TableStyles.java` |
+| **M3** (UI-0) | `app/ControlCenterApp.java`; `ui/shell/ControlCenterWindow.java`, `ui/shell/SimulationController.java`, `ui/shell/TrainProcessSupervisor.java`; `ui/theme/Theme.java`; `ui/components/Card.java`, `StatusPill.java`, `NavSidebar.java`, `TopBar.java`, `SimulationControlBar.java`, `NetworkStatusBar.java`, `TableStyles.java` |
 | **M1** (UI-1) | `ui/panels/NetworkMapPanel.java`, `ui/panels/TrackSectionsPanel.java`, `ui/panels/EventLogPanel.java` |
 | **M2** (UI-2) | `ui/panels/TrainsPanel.java` |
 | **M3** (UI-3) | `ui/panels/AlertsPanel.java` |
@@ -169,5 +169,5 @@ and no networking code changes at all.
 
 ## 8. Build order
 
-`UI-0` (M2's shell) must land first — every other screen plugs into it. `UI-3` waits for PR #7 to
+`UI-0` (M3's shell) must land first — every other screen plugs into it. `UI-3` waits for PR #7 to
 merge to avoid a conflict in `UdpMulticastPanel`. The rest are independent of each other.

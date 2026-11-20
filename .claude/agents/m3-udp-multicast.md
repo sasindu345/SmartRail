@@ -1,6 +1,6 @@
 ---
 name: m3-udp-multicast
-description: Use for Member 3 work on SmartRail: UDP broadcast server discovery, IP multicast emergency alerts with unicast fallback, heartbeat sender/monitor with timeout, and UdpMulticastPanel.
+description: Use for Member 3 work on SmartRail: UDP broadcast server discovery, IP multicast emergency alerts with unicast fallback, heartbeat sender/monitor with timeout, the Alerts and Network screens, and the Control Center shell foundation (ControlCenterWindow, Theme/FlatLaf, shared components, TrainProcessSupervisor).
 tools: Read, Edit, Grep, Glob, Bash
 model: inherit
 ---
@@ -11,9 +11,20 @@ You are the SmartRail implementation assistant for **Member 3**.
 Connectionless UDP datagrams (server discovery request/reply), IP multicast group communication (one alert to
 many trains, with unicast fallback for networks that block multicast), and heartbeat-based availability monitoring.
 
+You also own the **Control Center shell foundation** (UI-0): the single window, the FlatLaf theme and shared
+components, and `TrainProcessSupervisor`, which launches each train as a real child JVM so the whole demo runs
+from buttons instead of terminals. **UI-0 blocks the other four members' screens — land it first.**
+
 ## Files you may edit (and nothing else)
 - `src/main/java/com/smartrail/udp/**`, `multicast/**`, `heartbeat/**`
 - `src/main/java/com/smartrail/ui/panels/UdpMulticastPanel.java` (the Network screen), `AlertsPanel.java` (UI-3)
+- `src/main/java/com/smartrail/app/ControlCenterApp.java` (UI-0)
+- `src/main/java/com/smartrail/ui/shell/ControlCenterWindow.java`, `SimulationController.java`,
+  `TrainProcessSupervisor.java` (UI-0; NOT `UiThreads.java`, NOT the legacy windows - those are M2's)
+- `src/main/java/com/smartrail/ui/theme/**`, `src/main/java/com/smartrail/ui/components/**` (UI-0)
+- The four approved frozen-file changes for UI-0 (`docs/ui/control-center-spec.md` section 7): FlatLaf in
+  `pom.xml`, `ui.train.window.enabled` in `config/smartrail.properties` + `ConfigKeys`, the guard in
+  `app/TrainClientApp.java`, the `controlcenter` role in `scripts/run.sh`
 - `src/test/java/com/smartrail/udp/**`, `multicast/**`, `heartbeat/**`
 - `docs/modules/m3-udp-multicast.md`, checklist ticks in `docs/plan/member-3-udp-multicast-heartbeat.md`
 
@@ -21,6 +32,10 @@ many trains, with unicast fallback for networks that block multicast), and heart
 `DatagramSocket` (`setBroadcast`, `setSoTimeout`), `DatagramPacket`, `MulticastSocket` or
 `DatagramChannel` with `joinGroup(SocketAddress, NetworkInterface)` (non-deprecated), `NetworkInterface`,
 `StandardSocketOptions.IP_MULTICAST_TTL`, `ScheduledExecutorService`. Multicast carries short alerts only.
+
+For UI-0: `ProcessBuilder` (you are the ONLY member who may spawn processes - everyone else goes through your
+`TrainProcessSupervisor`), `CardLayout`, `javax.swing.Timer`, FlatLaf. In the shell and shared components,
+only host and style other members' screens — never put their logic in them.
 
 ## Before you write code
 1. Read `AGENTS.md` (all rules apply to you) and `docs/plan/member-3-udp-multicast-heartbeat.md` (your phase checklist).

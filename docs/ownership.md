@@ -16,7 +16,7 @@ Files marked **(new)** below do not exist yet: they are the Control Center UI fi
 | `common/service/*.java` | cross-member interfaces + `ServerContext` |
 | `common/resource/*.java` | resource MIME types, paths, codec, resolver |
 | `common/log/EventLog.java` | event log |
-| `app/ServerApp.java`, `TrainClientApp.java`, `ControllerApp.java` | launchers / wiring (`ControlCenterApp.java` is M2's) |
+| `app/ServerApp.java`, `TrainClientApp.java`, `ControllerApp.java` | launchers / wiring (`ControlCenterApp.java` is M3's) |
 | `ui/shell/UiThreads.java` | EDT / background helper |
 | `config/*.properties`, `pom.xml`, `scripts/run.sh`, `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/protocol.md`, `docs/configuration.md`, `docs/ui/*.md` | project contracts |
 | `src/test/java/com/smartrail/testsupport/*`, `src/test/java/com/smartrail/common/**` | shared test support |
@@ -49,11 +49,6 @@ Files marked **(new)** below do not exist yet: they are the Control Center UI fi
 | `tcpclient/TrainClientListener.java` | client callbacks |
 | `tcpclient/TrainSimulator.java` | request/response driven train behaviour |
 | `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java` | legacy window shells (LAN run) |
-| `ui/shell/ControlCenterWindow.java` | the single demo window |
-| `ui/shell/SimulationController.java` | starts/stops the in-process server services |
-| `ui/shell/TrainProcessSupervisor.java` | spawns train child JVMs; the ONLY place `ProcessBuilder` is used |
-| `app/ControlCenterApp.java` | Control Center launcher |
-| `ui/theme/**`, `ui/components/**` | FlatLaf theme tokens + shared Card/StatusPill/NavSidebar/TopBar/bars/TableStyles |
 | `ui/panels/TcpClientPanel.java` | train connection panel |
 | `ui/panels/TrainsPanel.java` | Trains screen + per-train child-process consoles |
 | tests: `tcpclient/*Test` · doc: `docs/modules/m2-tcp-client.md` | |
@@ -70,6 +65,11 @@ Files marked **(new)** below do not exist yet: they are the Control Center UI fi
 | `heartbeat/HeartbeatMonitor.java` | timeout detection |
 | `heartbeat/HeartbeatSender.java` | periodic heartbeat |
 | `ui/panels/UdpMulticastPanel.java` | Network screen (discovery, services & ports) |
+| `app/ControlCenterApp.java` **(new)** | Control Center launcher |
+| `ui/shell/ControlCenterWindow.java` **(new)** | the single demo window |
+| `ui/shell/SimulationController.java` **(new)** | starts/stops the in-process server services |
+| `ui/shell/TrainProcessSupervisor.java` **(new)** | spawns train child JVMs; the ONLY place `ProcessBuilder` is used |
+| `ui/theme/**`, `ui/components/**` **(new)** | FlatLaf theme tokens + shared Card/StatusPill/NavSidebar/TopBar/bars/TableStyles |
 | `ui/panels/AlertsPanel.java` | Alerts screen (multicast feed) |
 | tests: `udp/*Test`, `multicast/*Test`, `heartbeat/*Test` · doc: `docs/modules/m3-udp-multicast.md` | |
 

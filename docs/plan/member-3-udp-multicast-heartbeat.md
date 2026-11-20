@@ -41,8 +41,9 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 
 ## Phase 4 — Evidence
 
-> **UI work moved out.** The Alerts and Network screens are now UI issue **UI-3**, against
-> `docs/ui/control-center-spec.md`.
+> **UI work moved out.** The Alerts and Network screens are now UI issue **UI-3**, and you additionally
+> own **UI-0**, the Control Center shell foundation that every other member's screen plugs into — land it
+> first, since it blocks UI-1…UI-5. Both against `docs/ui/control-center-spec.md`.
 
 - [x] *(superseded by UI-3, work done)* `UdpMulticastPanel`: Discover button + result/timeout message;
       Subscribe/Unsubscribe; received alerts list with time. Note: sender IP is not shown —
@@ -63,4 +64,4 @@ a stopped train becomes INACTIVE automatically.
 
 ## Out of scope
 Sending train telemetry over UDP/multicast, reliable-multicast protocols, NAT traversal.
-UI screens are tracked separately in UI-3.
+UI work is tracked separately in UI-0 (Control Center shell foundation) and UI-3 (Alerts & Network screens).

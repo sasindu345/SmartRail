@@ -44,9 +44,9 @@ resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 
 ## Phase 4 — Evidence
 
-> **UI work moved out.** The Control Center shell (window, theme, shared components,
-> `TrainProcessSupervisor`) is UI issue **UI-0**, and the Trains screen is **UI-2**, both against
-> `docs/ui/control-center-spec.md`. This issue is now the TCP client and IP addressing only.
+> **UI work moved out.** Your Trains screen is UI issue **UI-2**, against
+> `docs/ui/control-center-spec.md`. The Control Center shell it plugs into is **UI-0, owned by M3**.
+> This issue is now the TCP client and IP addressing only.
 
 - [ ] Evidence for the report: IPv4 and IPv6 resolution, a connection error message, 3 trains running
 
@@ -61,4 +61,4 @@ resolution and ports are visible in the UI; the UI never freezes during network 
 
 ## Out of scope
 Building other members' backends, TLS code (M4), discovery code (M3). The network map belongs to M1.
-Your UI work is tracked separately in UI-0 (Control Center shell) and UI-2 (Trains screen).
+The Control Center shell is M3's (UI-0). Your UI work is tracked separately in UI-2 (Trains screen).

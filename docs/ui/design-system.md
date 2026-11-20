@@ -1,6 +1,6 @@
 # SmartRail design system
 
-Shared visual rules for the Control Center. **Owner: Member 2** (`ui/theme/`, `ui/components/`).
+Shared visual rules for the Control Center. **Owner: Member 3** (`ui/theme/`, `ui/components/`).
 Other members compose these components; they do not invent their own colours, fonts or borders.
 
 Read `control-center-spec.md` first — it defines the screens this styling serves.
@@ -79,7 +79,7 @@ Spacing uses an 8px grid (`Theme.GAP` = 8, `Theme.PAD` = 16). Cards are 10px rad
 ## 5. Rules for everyone
 
 1. **Compose, don't restyle.** Use `Card`, `StatusPill` and `TableStyles`; do not set your own
-   colours, fonts or borders in a panel. If a component is missing, ask M2 to add it.
+   colours, fonts or borders in a panel. If a component is missing, ask M3 to add it.
 2. **Every widget shows a network fact.** No decorative panels, no filler.
 3. **Never block the EDT.** Network work via `UiThreads.runInBackground`, UI updates via
    `UiThreads.onEdt`.

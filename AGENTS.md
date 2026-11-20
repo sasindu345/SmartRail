@@ -26,8 +26,8 @@ No member starts UI work before their networking concept passes its tests.
 | Member | Networking concept(s) | Packages / files they own |
 |---|---|---|
 | 1 | **Java NIO** (ServerSocketChannel, Selector, ByteBuffer), TCP server, message framing, server-side coordination | `nio/`, `coordination/`, `ui/panels/NioServerPanel.java`, `NetworkMapPanel.java`, `TrackSectionsPanel.java`, `EventLogPanel.java` |
-| 2 | **TCP client sockets + I/O streams**, **IP addressing / InetAddress / ports**, Control Center shell | `tcpclient/`, `ui/shell/` (except `UiThreads`), `ui/theme/`, `ui/components/`, `ui/panels/TcpClientPanel.java`, `TrainsPanel.java`, `app/ControlCenterApp.java` |
-| 3 | **UDP datagrams** (discovery), **IP multicast** (alerts), **heartbeat** availability | `udp/`, `multicast/`, `heartbeat/`, `ui/panels/UdpMulticastPanel.java`, `AlertsPanel.java` |
+| 2 | **TCP client sockets + I/O streams**, **IP addressing / InetAddress / ports** | `tcpclient/`, `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java`, `ui/panels/TcpClientPanel.java`, `TrainsPanel.java` |
+| 3 | **UDP datagrams** (discovery), **IP multicast** (alerts), **heartbeat** availability, **Control Center shell foundation** | `udp/`, `multicast/`, `heartbeat/`, `ui/panels/UdpMulticastPanel.java`, `AlertsPanel.java`, `app/ControlCenterApp.java`, `ui/shell/ControlCenterWindow.java`, `SimulationController.java`, `TrainProcessSupervisor.java`, `ui/theme/`, `ui/components/` |
 | 4 | **TLS** (SSLContext, SSLServerSocket/SSLSocket, keystores), **URL / URLConnection** + HTTP resources | `tls/`, `urlconnection/`, `scripts/generate-dev-certs.sh`, `ui/panels/TlsResourcePanel.java` |
 | 5 | **Java RMI**, **custom protocol handler** (`smartrail://`), **content handlers** | `rmi/`, `protocolhandler/`, `contenthandler/`, `META-INF/services/…`, `ui/panels/RmiHandlerPanel.java` |
 | Shared | Contracts used by everyone — **frozen** | `common/**`, `app/**` (except `ControlCenterApp`), `ui/shell/UiThreads.java`, `config/**`, `pom.xml` |
@@ -97,8 +97,8 @@ Applies to every `ui/**` change; the full spec is `docs/ui/control-center-spec.m
 - **Every widget visualises a network event.** No decorative panels, no filler, no fake or placeholder data.
 - A service that is unimplemented or failed to start is shown grey/red **with the reason** — never hidden.
 - Compose the shared components (`Card`, `StatusPill`, `TableStyles`, …) and the `Theme` tokens. Do not set
-  your own colours, fonts or borders in a panel; if a component is missing, ask Member 2 to add it.
-- Child train processes are started **only** through Member 2's `TrainProcessSupervisor` — no other class
+  your own colours, fonts or borders in a panel; if a component is missing, ask Member 3 to add it.
+- Child train processes are started **only** through Member 3's `TrainProcessSupervisor` — no other class
   may call `ProcessBuilder` or `Runtime.exec`.
 - Nothing hard-coded in the UI either: ports, hosts, timeouts and train/section IDs come from `NetworkConfig`
   and `RailwayData`.

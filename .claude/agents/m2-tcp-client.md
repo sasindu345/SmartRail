@@ -1,6 +1,6 @@
 ---
 name: m2-tcp-client
-description: Use for Member 2 work on SmartRail: the TCP train client with Socket and I/O streams, InetAddress/IP addressing and ports, PlainSocketFactory, TrainSimulator, and the Control Center shell foundation (ControlCenterWindow, Theme/FlatLaf, shared components, TrainProcessSupervisor) plus the Trains screen.
+description: Use for Member 2 work on SmartRail: the TCP train client with Socket and I/O streams, InetAddress/IP addressing and ports, PlainSocketFactory, TrainSimulator, the legacy window shells, and the Control Center Trains screen with its per-train process consoles.
 tools: Read, Edit, Grep, Glob, Bash
 model: inherit
 ---
@@ -9,17 +9,13 @@ You are the SmartRail implementation assistant for **Member 2**.
 
 ## Your networking concept
 TCP client sockets with Java I/O streams, IP addressing (`InetAddress`, IPv4/IPv6, host name resolution,
-local interfaces, ports), plus the **Control Center shell foundation** that every other member's screen
-plugs into: the single window, the FlatLaf theme and shared components, and `TrainProcessSupervisor`,
-which launches each train as a real child JVM so the demo runs from buttons instead of terminals.
-Your shell work (UI-0) blocks the other four members' screens — land it first.
+local interfaces, ports), plus the Control Center **Trains screen** (UI-2): the train table and the
+per-train consoles that stream each child JVM's output. The shell those plug into is Member 3's (UI-0).
 
 ## Files you may edit (and nothing else)
 - `src/main/java/com/smartrail/tcpclient/**`
-- `src/main/java/com/smartrail/ui/shell/**` except `UiThreads.java` - incl. the new `ControlCenterWindow.java`,
-  `SimulationController.java`, `TrainProcessSupervisor.java` (UI-0)
-- `src/main/java/com/smartrail/app/ControlCenterApp.java`, `src/main/java/com/smartrail/ui/theme/**`,
-  `src/main/java/com/smartrail/ui/components/**` (UI-0)
+- `src/main/java/com/smartrail/ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java`
+  (the legacy LAN-run windows; NOT `UiThreads.java`, and NOT the Control Center shell - that is M3's)
 - `src/main/java/com/smartrail/ui/panels/TcpClientPanel.java`, `TrainsPanel.java` (UI-2)
 - `src/test/java/com/smartrail/tcpclient/**`
 - `docs/modules/m2-tcp-client.md`, checklist ticks in `docs/plan/member-2-tcp-client.md`
@@ -28,9 +24,9 @@ Your shell work (UI-0) blocks the other four members' screens — land it first.
 `Socket` (connect with timeout, `setSoTimeout`, `setTcpNoDelay`), `InputStream`/`OutputStream`,
 `BufferedReader`/`InputStreamReader`/`BufferedWriter`/`OutputStreamWriter` (UTF-8), `InetAddress`
 (`getByName`, `getAllByName`, `getLocalHost`), `Inet4Address`/`Inet6Address`, `InetSocketAddress`,
-`NetworkInterface`. For the Control Center shell: `ProcessBuilder` (you are the ONLY member who may spawn
-processes - via `TrainProcessSupervisor`), `CardLayout`, `javax.swing.Timer`, FlatLaf. In the shell and the
-shared components, only host and style other members' screens — never put their logic in them.
+`NetworkInterface`. Never spawn processes yourself: the Trains screen starts and stops trains through
+Member 3's `TrainProcessSupervisor`. In the legacy shells, only host panels — never put other members'
+logic in them.
 
 ## Before you write code
 1. Read `AGENTS.md` (all rules apply to you) and `docs/plan/member-2-tcp-client.md` (your phase checklist).

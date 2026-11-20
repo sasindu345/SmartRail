@@ -30,7 +30,7 @@ rules: [`design-system.md`](../ui/design-system.md), demo: [`demo-flow.md`](../u
 
 | Issue | Owner | Scope | Depends on |
 |---|---|---|---|
-| **UI-0** Control Center shell | M2 | window, FlatLaf theme, shared components, `TrainProcessSupervisor`, `SimulationController`, control + status bars | — **blocks all others** |
+| **UI-0** Control Center shell | M3 | window, FlatLaf theme, shared components, `TrainProcessSupervisor`, `SimulationController`, control + status bars | — **blocks all others** |
 | **UI-1** Overview, Track Sections, Event Log | M1 | network map, train table, selected-train card, sections table, conflict demo, log view | UI-0 |
 | **UI-2** Trains screen | M2 | train table + per-train child-process consoles, start/stop train | UI-0 |
 | **UI-3** Alerts & Network | M3 | alert feed, subscribe, trigger obstruction, discovery, services & ports | UI-0, PR #7 |
@@ -61,8 +61,9 @@ Merge to `main` at least once per phase — integrate continuously, never at the
 - Before C1, Members 3/4/5 use `FakeRailwayService`; Member 4's TLS server can use a fake `MessageHandler` in tests.
 - Member 2 can test `TrainClient` against a tiny `ServerSocket` in the test or against `nc -l <port>`.
 - Member 1 can test the server with `nc localhost 5000` (type protocol lines by hand) before Member 2 is ready.
-- Nobody edits `ServerApp`/`TrainClientApp`/`ControllerApp` — they already wire every class (M2 adds the
-  new `ControlCenterApp` and the one approved `ui.train.window.enabled` guard in `TrainClientApp`).
+- Nobody edits `ServerApp`/`TrainClientApp`/`ControllerApp` — they already wire every class (the new
+  `ControlCenterApp` and the one approved `ui.train.window.enabled` guard in `TrainClientApp` are M3's, as
+  the owner of UI-0).
 
 ## Workload balance (target ≈ 20% each)
 
@@ -75,12 +76,14 @@ Effort points per member (1 point ≈ half a day). Every member also carries pan
 | Tests + docs + demo | 3 | 3 | 3 | 3 | 3 |
 | Integration support | 1 | 2 | 2 | 1 | 1 |
 | **Backend subtotal** | **18** | **17** | **17** | **17** | **18** |
-| Control Center UI issue | 4 (UI-1) | 8 (UI-0 + UI-2) | 3 (UI-3) | 3 (UI-4) | 2 (UI-5) |
-| Shared docs / demo / evidence upkeep | 1 | 0 | 2 | 2 | 3 |
-| **Total** | **23** | **25** | **22** | **22** | **23** |
+| Control Center UI issue | 4 (UI-1) | 2 (UI-2) | 9 (UI-0 + UI-3) | 3 (UI-4) | 2 (UI-5) |
+| Shared docs / demo / evidence upkeep | 1 | 3 | 0 | 2 | 3 |
+| **Total** | **23** | **22** | **26** | **22** | **23** |
 
-M2 carries ~2 points more because the shell (UI-0) blocks everyone else; that is offset by handing all
-shared docs, demo-script and evidence duties to M3/M4/M5. Re-check the balance once UI-0 lands.
+**M3 owns UI-0** (agreed 2026-11-20): their backend is already finished while M1/M2/M4 have not started, and
+the shell blocks every other screen, so it goes to whoever can land it now. That leaves M3 ~3 points above
+average, so all shared docs, demo-script and evidence duties move off M3 to M2/M4/M5. If M3 is still heavy
+once UI-0 lands, hand the UI-3 Network screen or part of the component set to M2.
 
 Rebalance at the end of Phase 2 if someone is clearly ahead/behind: the next free item goes to the member with
 the lowest finished-points total (inside *their own* packages — never take over someone's concept).
