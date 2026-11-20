@@ -23,6 +23,7 @@ public final class ConfigKeys {
     public static final String SERVER_BIND_ADDRESS = "server.bind.address";
     public static final String SERVER_ADVERTISED_HOST = "server.advertised.host";
     public static final String UI_SERVER_WINDOW_ENABLED = "ui.server.window.enabled";
+    public static final String UI_TRAIN_WINDOW_ENABLED = "ui.train.window.enabled";
 
     // ---- Client side ----
     public static final String CLIENT_SERVER_HOST = "client.server.host";

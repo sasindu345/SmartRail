@@ -53,9 +53,26 @@ public final class TrainClientApp {
             }
         });
 
-        // Alerts are shown by Member 3's panel; the subscriber is created here so the window can stop it on exit.
-        MulticastAlertSubscriber alerts = new MulticastAlertSubscriber(config, alert -> { });
+        // Alerts subscriber: prints to stdout so child JVM console streams alert fan-out
+        MulticastAlertSubscriber alerts = new MulticastAlertSubscriber(config, alert -> {
+            System.out.println("[ALERT] Received " + alert);
+        });
 
-        SwingUtilities.invokeLater(() -> new TrainClientWindow(config, client, alerts).setVisible(true));
+        if (config.getBoolean(ConfigKeys.UI_TRAIN_WINDOW_ENABLED)) {
+            SwingUtilities.invokeLater(() -> new TrainClientWindow(config, client, alerts).setVisible(true));
+        } else {
+            alerts.start();
+            System.out.println("[TRAIN] " + trainId + " (" + train.name() + ") running in background [headless]");
+            java.util.concurrent.CountDownLatch shutdown = new java.util.concurrent.CountDownLatch(1);
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                alerts.stop();
+                shutdown.countDown();
+            }, "train-shutdown"));
+            try {
+                shutdown.await();
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
