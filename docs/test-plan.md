@@ -20,9 +20,9 @@ Automated tests: `mvn verify` (JUnit 5, one test class set per member, `testsupp
 | 12 | TLS trusted certificate | handshake succeeds; protocol/cipher shown | 4 | `TlsChannelTest` | | |
 | 13 | TLS untrusted certificate | connection rejected, no bypass | 4 | `TlsChannelTest` | | |
 | 14 | URLConnection resource | schedules/tracks fetched; 404 handled | 4 | `ResourceHttpServerTest` | | |
-| 15 | RMI remote method | expected result; RemoteException handled | 5 | `RailwayAdminServiceTest` | | |
-| 16 | smartrail:// URL | resolves a real resource from the SmartRail server | 5 | `SmartRailUrlTest` | | |
-| 17 | Content handler | payload → typed `TrainInfo`/`TrackInfo` | 5 | `ContentHandlerTest` | | |
+| 15 | RMI remote method | expected result; RemoteException handled | 5 | `RailwayAdminServiceTest` | PASS | Unit tests verify active trains retrieval, simulated hold/resume/emergency command delegation, unknown ID RemoteException, and caller host logging. |
+| 16 | smartrail:// URL | resolves a real resource from the SmartRail server | 5 | `SmartRailUrlTest` | PASS | Unit tests verify URLStreamHandlerProvider ServiceLoader registration, TCP GET request/status parsing, and 404/IOException on missing resources. |
+| 17 | Content handler | payload → typed `TrainInfo`/`TrackInfo` | 5 | `ContentHandlerTest` | PASS | Unit tests verify MIME type factory mapping, UTF-8 payload parsing to TrainInfo/TrackInfo/ScheduleInfo, and IOException on malformed payload. |
 | 18 | Full integrated run (LAN, ≥2 machines) | checkpoints C1–C8 all work together | All | manual | | |
 
 Shared contract tests (baseline, must always pass): `ProtocolCodecTest`, `NetworkConfigTest`, `RailwayDataTest`,
