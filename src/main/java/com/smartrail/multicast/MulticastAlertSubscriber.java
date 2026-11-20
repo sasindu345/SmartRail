@@ -13,8 +13,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.function.Consumer;
 
 /**
@@ -92,21 +90,26 @@ public final class MulticastAlertSubscriber {
         }
     }
 
+    /**
+     * Only resolves an explicit interface when the operator named one ({@code multicast.interface}) - for
+     * a demo where several NICs are active and one specific one must be used. Otherwise returns
+     * {@code null}, which tells {@code joinGroup}/{@code leaveGroup} to use the platform's own default
+     * multicast interface. That is deliberately preferred over picking one ourselves: this machine, for
+     * example, keeps several "utunN" point-to-point tunnel interfaces up (created by the OS, e.g. iCloud
+     * Private Relay/Continuity - nothing the user connected) that report multicast support but cannot
+     * actually carry multicast traffic, so a naive "first multicast-capable interface" search can pick a
+     * dead one even though the real network adapter works fine.
+     */
     private NetworkInterface resolveInterface() throws SocketException {
         var configured = config.find(ConfigKeys.MULTICAST_INTERFACE);
-        if (configured.isPresent()) {
-            NetworkInterface ni = NetworkInterface.getByName(configured.get());
-            if (ni != null) {
-                return ni;
-            }
+        if (configured.isEmpty()) {
+            return null;
         }
-        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        for (NetworkInterface ni : Collections.list(interfaces)) {
-            if (ni.isUp() && ni.supportsMulticast() && !ni.isLoopback()) {
-                return ni;
-            }
+        NetworkInterface ni = NetworkInterface.getByName(configured.get());
+        if (ni == null) {
+            throw new SocketException("Unknown multicast.interface '" + configured.get() + "'");
         }
-        return null;
+        return ni;
     }
 
     public void stop() {
