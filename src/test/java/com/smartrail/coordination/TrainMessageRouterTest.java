@@ -47,6 +47,19 @@ class TrainMessageRouterTest {
     }
 
     @Test
+    void chosenStartAndEndReplaceThePredefinedRoute() {
+        assertTrue(railway.chooseJourney("TR01", "ST05", "ST02"));
+        FakeTrainConnection connection = connection();
+        router.onMessage(connection, Message.of(MessageType.REGISTER, "TR01", "ST05"));
+        Message route = connection.sent().get(1);
+        assertEquals("CHOSEN", route.field(1));
+        assertEquals("SEC_H,SEC_F,SEC_C", route.field(2));
+        assertTrue(railway.requestSection("TR01", "SEC_H").granted());
+        assertEquals("NOT_ON_ROUTE", railway.requestSection("TR01", "SEC_A").reason());
+        assertTrue(!railway.chooseJourney("TR01", "ST01", "ST01"));
+    }
+
+    @Test
     void unregisteredTrainGetsError() {
         FakeTrainConnection connection = connection();
         router.onMessage(connection, Message.of(MessageType.POSITION, "TR01", "ST01", "MOVING"));

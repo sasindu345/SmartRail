@@ -34,6 +34,14 @@ public final class TrainClientApp {
         String trainId = args.length > 0 ? args[0] : config.get(ConfigKeys.CLIENT_DEFAULT_TRAIN_ID);
         TrainDefinition train = data.train(trainId)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown train " + trainId + " - see config/railway-data.properties"));
+        String chosenStart = System.getProperty("smartrail.journey.start");
+        if (chosenStart != null && !chosenStart.isBlank()) {
+            String start = chosenStart.trim();
+            if (data.station(start).isEmpty()) {
+                throw new IllegalArgumentException("Unknown start station " + start);
+            }
+            train = new TrainDefinition(train.trainId(), train.name(), start, train.routeId());
+        }
 
         Transport transport = Transport.valueOf(config.get(ConfigKeys.CLIENT_TRANSPORT).toUpperCase());
         ClientSocketFactory sockets = transport == Transport.TLS

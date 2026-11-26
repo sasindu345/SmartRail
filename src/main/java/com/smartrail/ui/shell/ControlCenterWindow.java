@@ -1,14 +1,19 @@
 package com.smartrail.ui.shell;
 
+import com.smartrail.common.model.RouteInfo;
+import com.smartrail.common.model.StationInfo;
+import com.smartrail.common.model.TrainDefinition;
+import com.smartrail.common.model.TrainInfo;
 import com.smartrail.ui.components.Card;
 import com.smartrail.ui.components.NavSidebar;
 import com.smartrail.ui.components.NetworkStatusBar;
 import com.smartrail.ui.components.SimulationControlBar;
+import com.smartrail.ui.components.StatusPill;
 import com.smartrail.ui.components.TopBar;
+import com.smartrail.ui.panels.AlertsPanel;
 import com.smartrail.ui.panels.EventLogPanel;
 import com.smartrail.ui.panels.NioServerPanel;
 import com.smartrail.ui.panels.RmiHandlerPanel;
-import com.smartrail.ui.panels.TlsResourcePanel;
 import com.smartrail.ui.panels.TrackSectionsPanel;
 import com.smartrail.ui.panels.UdpMulticastPanel;
 import com.smartrail.ui.theme.Theme;
@@ -16,15 +21,19 @@ import com.smartrail.ui.theme.Theme;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
 import javax.swing.WindowConstants;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -53,9 +62,11 @@ public final class ControlCenterWindow extends JFrame {
     private final CardLayout cardLayout;
     private final JPanel contentCards;
 
-    // Per-train console areas for Trains screen
+    // Per-train console areas and status cards for the Trains screen
     private final Map<String, JTextArea> trainConsoles = new ConcurrentHashMap<>();
-    private final JTabbedPane trainConsoleTabs = new JTabbedPane();
+    private final Map<String, TrainCard> trainCards = new ConcurrentHashMap<>();
+    private NioServerPanel overview;
+    private AlertsPanel alertsPanel;
 
     public ControlCenterWindow(SimulationController controller, TrainProcessSupervisor supervisor) {
         super("SmartRail Control Center - Railway Traffic Coordination Simulator");
@@ -72,6 +83,9 @@ public final class ControlCenterWindow extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 topBar.dispose();
+                if (alertsPanel != null) {
+                    alertsPanel.stopSubscription();
+                }
                 UiThreads.runInBackground(() -> {
                     supervisor.stopAllTrains();
                     controller.stopServer();
@@ -136,7 +150,6 @@ public final class ControlCenterWindow extends JFrame {
         // Register train output listener to stream into train consoles
         supervisor.addOutputListener((trainId, line) -> UiThreads.onEdt(() -> {
             appendTrainOutput(trainId, line);
-            appendTrainOutput("ALL", "[" + trainId + "] " + line);
         }));
 
         // Layout assembly
@@ -154,6 +167,10 @@ public final class ControlCenterWindow extends JFrame {
         getContentPane().add(topBar, BorderLayout.NORTH);
         getContentPane().add(centerPanel, BorderLayout.CENTER);
         getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+
+        Timer trainCardsTimer = new Timer(400, e -> refreshTrainCards());
+        trainCardsTimer.setInitialDelay(0);
+        trainCardsTimer.start();
     }
 
     private void setupScreens() {
@@ -183,40 +200,108 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createOverviewScreen() {
-        return new NioServerPanel(controller);
+        overview = new NioServerPanel(controller);
+        return overview;
     }
 
     private JPanel createTrainsScreen() {
-        JPanel panel = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
-        panel.setOpaque(false);
-
-        Card headerCard = new Card("Train Processes & Consoles");
-        JPanel topInfo = new JPanel();
-        topInfo.setOpaque(false);
-        topInfo.setLayout(new BoxLayout(topInfo, BoxLayout.Y_AXIS));
-
-        JLabel desc = new JLabel("Real separate child JVM processes spawned via TrainProcessSupervisor.");
-        desc.setFont(Theme.FONT_BODY);
-        desc.setForeground(Theme.TEXT_MUTED);
-
-        topInfo.add(desc);
-        topInfo.add(Box.createVerticalStrut(Theme.GAP));
-        headerCard.setBody(topInfo);
-
-        for (String trainId : controller.railwayData().trains().stream().map(train -> train.trainId()).toList()) {
-            createTrainConsoleTab(trainId);
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(Theme.FONT_BODY);
+        for (TrainDefinition train : controller.railwayData().trains()) {
+            tabs.addTab(train.trainId(), createTrainTab(train));
         }
-        createTrainConsoleTab("ALL");
-
-        Card consoleCard = new Card("Child Process Console Output (Piped stdout / stderr)");
-        consoleCard.setBody(trainConsoleTabs);
-
-        panel.add(headerCard, BorderLayout.NORTH);
-        panel.add(consoleCard, BorderLayout.CENTER);
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.add(tabs, BorderLayout.CENTER);
         return panel;
     }
 
-    private void createTrainConsoleTab(String trainId) {
+    private JPanel createTrainTab(TrainDefinition train) {
+        JPanel tab = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
+        tab.setOpaque(false);
+        tab.add(createTrainCard(train), BorderLayout.NORTH);
+
+        JLabel hidden = new JLabel("Heartbeats are hidden. This is what the train process received.");
+        hidden.setFont(Theme.FONT_SMALL);
+        hidden.setForeground(Theme.TEXT_MUTED);
+        JPanel consoleBody = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
+        consoleBody.setOpaque(false);
+        consoleBody.add(hidden, BorderLayout.NORTH);
+        consoleBody.add(trainConsole(train.trainId()), BorderLayout.CENTER);
+
+        Card messages = new Card("Messages");
+        messages.setBody(consoleBody);
+        tab.add(messages, BorderLayout.CENTER);
+        return tab;
+    }
+
+    private JPanel createTrainCard(TrainDefinition train) {
+        Card card = new Card(train.trainId() + "  " + train.name());
+        StatusPill process = new StatusPill("Process stopped", Theme.INACTIVE);
+        JLabel place = cardLine("Place  " + train.startStationId());
+        JLabel address = cardLine("Address  not connected");
+        JLabel route = cardLine("Route  " + routeChain(train.routeId()));
+        JComboBox<String> from = stationCombo(train.startStationId());
+        JComboBox<String> to = stationCombo(routeEnd(train.routeId()));
+        JLabel last = cardLine("Last message  —");
+        Runnable showRoute = () -> {
+            String start = String.valueOf(from.getSelectedItem());
+            String end = String.valueOf(to.getSelectedItem());
+            List<String> sections = controller.sectionsBetween(start, end);
+            route.setText(sections.isEmpty()
+                    ? "Route  no track from " + start + " to " + end
+                    : "Route  " + chain(sections));
+        };
+        from.addActionListener(e -> showRoute.run());
+        to.addActionListener(e -> showRoute.run());
+        showRoute.run();
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.add(aligned(process));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(cardLine("From")));
+        body.add(aligned(from));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(cardLine("To")));
+        body.add(aligned(to));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(route));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(place));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(address));
+        body.add(Box.createVerticalStrut(Theme.GAP / 2));
+        body.add(aligned(last));
+        card.setBody(body);
+        trainCards.put(train.trainId(), new TrainCard(train, process, place, address, last, from, to));
+        return card;
+    }
+
+    private JComboBox<String> stationCombo(String selected) {
+        JComboBox<String> combo = new JComboBox<>();
+        for (StationInfo station : controller.railwayData().stations()) {
+            combo.addItem(station.stationId());
+        }
+        combo.setSelectedItem(selected);
+        combo.setFont(Theme.FONT_BODY);
+        combo.setMaximumSize(new Dimension(160, 28));
+        return combo;
+    }
+
+    private static JComponent aligned(JComponent component) {
+        component.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return component;
+    }
+
+    private static JLabel cardLine(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.FONT_BODY);
+        label.setForeground(Theme.TEXT);
+        return label;
+    }
+
+    private JScrollPane trainConsole(String trainId) {
         JTextArea area = new JTextArea();
         area.setEditable(false);
         area.setFont(Theme.FONT_MONO);
@@ -228,15 +313,127 @@ public final class ControlCenterWindow extends JFrame {
 
         JScrollPane scroll = new JScrollPane(area);
         scroll.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
-        trainConsoleTabs.addTab("Train " + trainId, scroll);
+        return scroll;
     }
 
     private void appendTrainOutput(String trainId, String line) {
+        if (line.contains("HEARTBEAT")) {
+            return;
+        }
         JTextArea area = trainConsoles.get(trainId);
         if (area != null) {
             area.append(line + "\n");
             area.setCaretPosition(area.getDocument().getLength());
         }
+        TrainCard card = trainCards.get(trainId);
+        String event = protocolEvent(line);
+        if (card != null && event != null) {
+            card.last.setText("Last message  " + event);
+        }
+    }
+
+    /** The reply worth showing on the card. Heartbeats never reach this method. */
+    private static String protocolEvent(String line) {
+        String[] types = {
+                "EMERGENCY_ALERT", "EMERGENCY_STOP", "SECTION_DENIED", "SECTION_GRANTED",
+                "REGISTER_OK", "ASSIGN_ROUTE", "HOLD", "RESUME"
+        };
+        for (String type : types) {
+            if (line.contains(type)) {
+                return type;
+            }
+        }
+        int connected = line.indexOf("connected ");
+        if (connected >= 0) {
+            return line.substring(connected).trim();
+        }
+        return null;
+    }
+
+    private void refreshTrainCards() {
+        Map<String, TrainInfo> live = Map.of();
+        if (controller.isServerRunning() && controller.serverContext() != null) {
+            live = new java.util.HashMap<>();
+            for (TrainInfo train : controller.serverContext().railwayService().getTrains()) {
+                live.put(train.trainId(), train);
+            }
+        }
+        for (TrainCard card : trainCards.values()) {
+            boolean running = supervisor.isTrainRunning(card.train.trainId());
+            String processText = running ? "Process running" : "Process stopped";
+            if (!processText.equals(card.process.getText())) {
+                card.process.setStatus(processText, running ? Theme.OK : Theme.INACTIVE, Theme.SURFACE, Theme.TEXT);
+            }
+            TrainInfo info = live.get(card.train.trainId());
+            String place = info == null || info.location() == null ? card.train.startStationId() : placeName(info.location());
+            String status = info == null || info.status() == null ? "" : "  " + info.status().name();
+            setCardLine(card.place, "Place  " + place + status);
+            String address = info == null || info.remoteAddress() == null ? "not connected" : info.remoteAddress();
+            setCardLine(card.address, "Address  " + address);
+        }
+    }
+
+    private static void setCardLine(JLabel label, String text) {
+        if (!text.equals(label.getText())) {
+            label.setText(text);
+        }
+    }
+
+    private String placeName(String location) {
+        return controller.railwayData().section(location)
+                .map(section -> section.fromStationId() + "→" + section.toStationId())
+                .orElse(location);
+    }
+
+    private String routeEnd(String routeId) {
+        for (RouteInfo route : controller.railwayData().routes()) {
+            if (!route.routeId().equals(routeId) || route.sectionIds().isEmpty()) {
+                continue;
+            }
+            String last = route.sectionIds().get(route.sectionIds().size() - 1);
+            return controller.railwayData().section(last).map(section -> section.toStationId()).orElse(last);
+        }
+        return controller.railwayData().stations().isEmpty()
+                ? ""
+                : controller.railwayData().stations().get(0).stationId();
+    }
+
+    private String chain(List<String> sectionIds) {
+        if (sectionIds.isEmpty()) {
+            return "—";
+        }
+        var first = controller.railwayData().section(sectionIds.get(0));
+        if (first.isEmpty()) {
+            return "—";
+        }
+        StringBuilder text = new StringBuilder(first.get().fromStationId());
+        for (String sectionId : sectionIds) {
+            controller.railwayData().section(sectionId)
+                    .ifPresent(section -> text.append(" → ").append(section.toStationId()));
+        }
+        return text.toString();
+    }
+
+    private String routeChain(String routeId) {
+        for (RouteInfo route : controller.railwayData().routes()) {
+            if (!route.routeId().equals(routeId)) {
+                continue;
+            }
+            if (route.sectionIds().isEmpty()) {
+                return "—";
+            }
+            var first = controller.railwayData().section(route.sectionIds().get(0));
+            if (first.isEmpty()) {
+                return "—";
+            }
+            StringBuilder chain = new StringBuilder(first.get().fromStationId());
+            for (String sectionId : route.sectionIds()) {
+                controller.railwayData().section(sectionId)
+                        .ifPresent(section -> chain.append(" → ").append(section.toStationId()));
+            }
+            return chain.toString();
+        }
+        return "—";
     }
 
     private JPanel createTrackSectionsScreen() {
@@ -244,49 +441,50 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createAlertsScreen() {
-        JPanel panel = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
-        panel.setOpaque(false);
-
-        Card card = new Card("Multicast Alerts Feed");
-        JPanel inner = new JPanel();
-        inner.setOpaque(false);
-        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
-
-        JLabel info = new JLabel("Live feed of EMERGENCY_ALERT messages received over IP multicast.");
-        info.setFont(Theme.FONT_BODY);
-        info.setForeground(Theme.TEXT_MUTED);
-
-        JLabel status = new JLabel("● Ready for Member 3 UI-3 components (AlertsPanel).");
-        status.setFont(Theme.FONT_BODY);
-        status.setForeground(Theme.PRIMARY);
-
-        inner.add(info);
-        inner.add(Box.createVerticalStrut(Theme.GAP));
-        inner.add(status);
-
-        card.setBody(inner);
-        panel.add(card, BorderLayout.CENTER);
-        return panel;
+        alertsPanel = new AlertsPanel(controller);
+        return alertsPanel;
     }
 
     private JPanel createNetworkScreen() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        UdpMulticastPanel udpPanel = new UdpMulticastPanel(controller.config(), discovered -> {
-            UiThreads.onEdt(() -> {
-                // switch to trains view when server is discovered
-            });
-        });
-        panel.add(udpPanel, BorderLayout.CENTER);
+        panel.add(new UdpMulticastPanel(controller, discovered -> { }), BorderLayout.CENTER);
         return panel;
     }
 
     private JPanel createSecurityScreen() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        TlsResourcePanel tlsPanel = new TlsResourcePanel(controller.config());
-        panel.add(tlsPanel, BorderLayout.CENTER);
+        Card card = new Card("TLS and HTTP");
+        JTextArea text = new JTextArea();
+        text.setEditable(false);
+        text.setLineWrap(true);
+        text.setWrapStyleWord(true);
+        text.setFont(Theme.FONT_BODY);
+        text.setForeground(Theme.TEXT);
+        text.setBackground(Theme.SURFACE);
+        card.setBody(new JScrollPane(text));
+        controller.addStatusListener(states -> UiThreads.onEdt(() -> text.setText(securityText(states))));
+        panel.add(card, BorderLayout.CENTER);
         return panel;
+    }
+
+    private static String securityText(Map<String, SimulationController.ServiceState> states) {
+        return serviceSentence("TLS", states.get(NetworkStatusBar.SERVICE_TLS))
+                + "\n\n"
+                + serviceSentence("HTTP", states.get(NetworkStatusBar.SERVICE_HTTP));
+    }
+
+    private static String serviceSentence(String name, SimulationController.ServiceState state) {
+        if (state == null || state.status() == NetworkStatusBar.ServiceStatus.STOPPED) {
+            return name + " has not been started.";
+        }
+        if (state.status() == NetworkStatusBar.ServiceStatus.FAILED) {
+            String reason = state.endpointOrError() == null ? "it failed to start" : state.endpointOrError();
+            return name + " is not available. " + reason;
+        }
+        String endpoint = state.endpointOrError() == null ? "" : " " + state.endpointOrError();
+        return name + " is listening." + endpoint;
     }
 
     private JPanel createAdminScreen() {
@@ -319,14 +517,26 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private void handleLaunchTrain(String trainId, boolean tls) {
+        TrainCard card = trainCards.get(trainId);
+        String start = card == null ? null : String.valueOf(card.from.getSelectedItem());
+        String end = card == null ? null : String.valueOf(card.to.getSelectedItem());
         controlBar.setActionsInFlight(true);
         UiThreads.runInBackground(() -> {
             try {
-                supervisor.startTrain(trainId, tls);
+                if (start != null && end != null && !controller.chooseJourney(trainId, start, end)) {
+                    UiThreads.onEdt(() -> appendTrainOutput(trainId, "[SUPERVISOR] No track from " + start + " to " + end));
+                    return;
+                }
+                supervisor.startTrain(trainId, tls, start);
             } catch (IOException e) {
                 appendTrainOutput(trainId, "[SUPERVISOR ERROR] Failed to spawn train: " + e.getMessage());
             } finally {
-                UiThreads.onEdt(() -> controlBar.setActionsInFlight(false));
+                UiThreads.onEdt(() -> {
+                    controlBar.setActionsInFlight(false);
+                    if (overview != null) {
+                        overview.selectTrain(trainId);
+                    }
+                });
             }
         });
     }
@@ -361,5 +571,26 @@ public final class ControlCenterWindow extends JFrame {
 
     public TrainProcessSupervisor getSupervisor() {
         return supervisor;
+    }
+
+    private static final class TrainCard {
+        private final TrainDefinition train;
+        private final StatusPill process;
+        private final JLabel place;
+        private final JLabel address;
+        private final JLabel last;
+        private final JComboBox<String> from;
+        private final JComboBox<String> to;
+
+        private TrainCard(TrainDefinition train, StatusPill process, JLabel place, JLabel address, JLabel last,
+                          JComboBox<String> from, JComboBox<String> to) {
+            this.train = train;
+            this.process = process;
+            this.place = place;
+            this.address = address;
+            this.last = last;
+            this.from = from;
+            this.to = to;
+        }
     }
 }

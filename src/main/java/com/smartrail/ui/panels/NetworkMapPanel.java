@@ -49,6 +49,9 @@ public final class NetworkMapPanel extends JPanel {
     private String hoveredSection;
     private int pointerX = -1;
     private int pointerY = -1;
+    private Map<String, String> alerts = Map.of();
+    private boolean blinkOn = true;
+    private int blinkTick;
 
     public NetworkMapPanel(RailwayData data, long travelMs) {
         this.data = data;
@@ -58,11 +61,23 @@ public final class NetworkMapPanel extends JPanel {
         setOpaque(true);
         setBackground(Theme.BG);
         Timer glide = new Timer(40, event -> {
+            boolean moving = false;
             for (TrainInfo train : trains) {
                 if (train.status() == TrainStatus.MOVING) {
+                    moving = true;
+                    break;
+                }
+            }
+            if (!alerts.isEmpty()) {
+                blinkTick++;
+                if (blinkTick % 8 == 0) {
+                    blinkOn = !blinkOn;
                     repaint();
                     return;
                 }
+            }
+            if (moving) {
+                repaint();
             }
         });
         glide.setCoalesce(true);
@@ -93,6 +108,16 @@ public final class NetworkMapPanel extends JPanel {
         repaint();
     }
 
+    /** Sections that should flash. The value is the chip text, for example "Obstruction" or "Conflict TR03". */
+    public void setAlerts(Map<String, String> labels) {
+        Map<String, String> next = labels == null || labels.isEmpty() ? Map.of() : Map.copyOf(labels);
+        if (next.equals(alerts)) {
+            return;
+        }
+        alerts = next;
+        repaint();
+    }
+
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
@@ -102,15 +127,29 @@ public final class NetworkMapPanel extends JPanel {
         trackHits.clear();
         Map<String, Point2D.Float> stationAt = stationPoints();
         Map<String, Integer> lane = lanes();
-        g.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         for (TrackInfo section : layout) {
             Bend bend = bendFor(section, stationAt, lane);
             if (bend == null) {
                 continue;
             }
-            g.setColor(color(stateOf(section.sectionId())));
+            String alert = alerts.get(section.sectionId());
+            if (alert != null && blinkOn) {
+                g.setStroke(new BasicStroke(8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(Theme.DANGER);
+            } else if (alert != null) {
+                g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(Theme.WARN);
+            } else {
+                g.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(color(stateOf(section.sectionId())));
+            }
             g.draw(new QuadCurve2D.Float(bend.start.x, bend.start.y, bend.control.x, bend.control.y,
                     bend.end.x, bend.end.y));
+            if (alert != null) {
+                Point2D.Float mid = curveAt(bend, 0.5f);
+                g.setFont(Theme.FONT_SMALL_BOLD);
+                drawAlertChip(g, alert, Math.round(mid.x), Math.round(mid.y) - 14);
+            }
             String direction = section.fromStationId() + "→" + section.toStationId();
             for (float t = 0.12f; t <= 0.9f; t += 0.08f) {
                 Point2D.Float at = curveAt(bend, t);
@@ -438,6 +477,20 @@ public final class NetworkMapPanel extends JPanel {
             case ARRIVED -> Theme.OK;
             case INACTIVE -> Theme.INACTIVE;
         };
+    }
+
+    private void drawAlertChip(Graphics2D g, String text, int x, int y) {
+        FontMetrics metrics = g.getFontMetrics();
+        int width = metrics.stringWidth(text) + 10;
+        int height = metrics.getHeight();
+        int left = Math.max(4, Math.min(getWidth() - width - 4, x - width / 2));
+        int top = Math.max(2, Math.min(getHeight() - height - 2, y - height / 2));
+        g.setColor(Theme.SURFACE);
+        g.fillRoundRect(left, top, width, height, Theme.CORNER_RADIUS, Theme.CORNER_RADIUS);
+        g.setColor(Theme.DANGER);
+        g.drawRoundRect(left, top, width, height, Theme.CORNER_RADIUS, Theme.CORNER_RADIUS);
+        g.setColor(Theme.DANGER);
+        g.drawString(text, left + 5, top + metrics.getAscent());
     }
 
     /** Section id centered on its own stretch, so the return track is labelled on that line. */

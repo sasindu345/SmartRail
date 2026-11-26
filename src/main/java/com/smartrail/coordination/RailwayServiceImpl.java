@@ -15,7 +15,9 @@ import com.smartrail.common.service.AlertService;
 import com.smartrail.common.service.RailwayService;
 import com.smartrail.common.service.TrainConnection;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -33,6 +35,8 @@ public final class RailwayServiceImpl implements RailwayService {
     private final TrainRegistry registry = new TrainRegistry();
     private final TrackReservationService tracks;
     private final RouteService routes;
+    private final Map<String, String> chosenStart = new HashMap<>();
+    private final Map<String, List<String>> chosenSections = new HashMap<>();
 
     public RailwayServiceImpl(RailwayData data, AlertService alerts, EventLog log) {
         this.data = data;
@@ -52,13 +56,41 @@ public final class RailwayServiceImpl implements RailwayService {
     public synchronized void resetToStart() {
         tracks.releaseEvery();
         for (TrainDefinition train : data.trains()) {
-            registry.restoreStart(train.trainId(), train.startStationId());
+            registry.restoreStart(train.trainId(), chosenStart.getOrDefault(train.trainId(), train.startStationId()));
         }
         log.log("NIO", "RESET trains parked at start stations, all sections FREE");
     }
 
+    /**
+     * Remembers the stations the operator picked. The next {@code ASSIGN_ROUTE} uses the blocks
+     * between them instead of the train's predefined route. Returns false when those stations
+     * are not connected along the corridor.
+     */
+    public synchronized boolean chooseJourney(String trainId, String startId, String endId) {
+        if (data.train(trainId).isEmpty()) {
+            return false;
+        }
+        List<String> sections = RouteService.between(data, startId, endId);
+        if (sections.isEmpty()) {
+            return false;
+        }
+        chosenStart.put(trainId, startId);
+        chosenSections.put(trainId, sections);
+        log.log("NIO", "JOURNEY " + trainId + " " + startId + " to " + endId + " " + String.join(",", sections));
+        return true;
+    }
+
+    public synchronized Optional<List<String>> chosenSections(String trainId) {
+        List<String> sections = chosenSections.get(trainId);
+        return sections == null ? Optional.empty() : Optional.of(sections);
+    }
+
     /** Used by {@link TrainMessageRouter} after a successful REGISTER. */
-    public Optional<Message> routeAssignment(String trainId) {
+    public synchronized Optional<Message> routeAssignment(String trainId) {
+        List<String> chosen = chosenSections.get(trainId);
+        if (chosen != null) {
+            return Optional.of(Message.of(MessageType.ASSIGN_ROUTE, trainId, "CHOSEN", String.join(",", chosen)));
+        }
         return routes.assignment(trainId);
     }
 
@@ -121,7 +153,7 @@ public final class RailwayServiceImpl implements RailwayService {
         if (data.section(sectionId).isEmpty()) {
             return ReservationResult.denied(trainId, sectionId, null, "UNKNOWN_SECTION");
         }
-        if (!routes.isOnRoute(trainId, sectionId)) {
+        if (!onRoute(trainId, sectionId)) {
             log.log("NIO", "SECTION_DENIED " + trainId + " " + sectionId + " NOT_ON_ROUTE");
             return ReservationResult.denied(trainId, sectionId, null, "NOT_ON_ROUTE");
         }
@@ -174,6 +206,14 @@ public final class RailwayServiceImpl implements RailwayService {
     public synchronized void reportObstruction(String sectionId, String reason) {
         log.log("NIO", "OBSTRUCTION " + sectionId + " " + reason);
         alerts.publishAlert(sectionId, reason);
+    }
+
+    private boolean onRoute(String trainId, String sectionId) {
+        List<String> chosen = chosenSections.get(trainId);
+        if (chosen != null) {
+            return chosen.contains(sectionId);
+        }
+        return routes.isOnRoute(trainId, sectionId);
     }
 
     private boolean command(String trainId, MessageType type, TrainStatus status) {

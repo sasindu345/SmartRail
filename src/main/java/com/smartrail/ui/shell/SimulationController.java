@@ -7,6 +7,7 @@ import com.smartrail.common.log.EventLog;
 import com.smartrail.common.service.NetworkService;
 import com.smartrail.common.service.ServerContext;
 import com.smartrail.coordination.RailwayServiceImpl;
+import com.smartrail.coordination.RouteService;
 import com.smartrail.coordination.TrainMessageRouter;
 import com.smartrail.heartbeat.HeartbeatMonitor;
 import com.smartrail.multicast.MulticastAlertPublisher;
@@ -23,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -58,6 +60,7 @@ public final class SimulationController {
     private final List<NetworkService> services = new ArrayList<>();
     private final Map<String, ServiceState> serviceStates = new LinkedHashMap<>();
     private final List<StatusListener> statusListeners = new CopyOnWriteArrayList<>();
+    private final Map<String, String[]> journeys = new LinkedHashMap<>();
 
     private boolean running = false;
 
@@ -110,6 +113,9 @@ public final class SimulationController {
         alerts.bindRailwayService(railway);
         heartbeat = new HeartbeatMonitor(config, railway, log);
         router = new TrainMessageRouter(railway, heartbeat, log);
+        for (Map.Entry<String, String[]> journey : journeys.entrySet()) {
+            railway.chooseJourney(journey.getKey(), journey.getValue()[0], journey.getValue()[1]);
+        }
         ctx = new ServerContext(config, data, log, railway, router, alerts, heartbeat);
 
         services.clear();
@@ -198,6 +204,37 @@ public final class SimulationController {
 
     public RailwayData railwayData() {
         return data;
+    }
+
+    /**
+     * The operator's start and end for one train. Stored even if the server is stopped, and
+     * applied before the next train process registers so {@code ASSIGN_ROUTE} uses that path.
+     */
+    public synchronized boolean chooseJourney(String trainId, String startId, String endId) {
+        if (RouteService.between(data, startId, endId).isEmpty()) {
+            return false;
+        }
+        journeys.put(trainId, new String[]{startId, endId});
+        if (railway != null) {
+            railway.chooseJourney(trainId, startId, endId);
+        }
+        return true;
+    }
+
+    public List<String> sectionsBetween(String startId, String endId) {
+        return RouteService.between(data, startId, endId);
+    }
+
+    public synchronized Optional<List<String>> chosenSections(String trainId) {
+        if (railway != null) {
+            return railway.chosenSections(trainId);
+        }
+        String[] journey = journeys.get(trainId);
+        if (journey == null) {
+            return Optional.empty();
+        }
+        List<String> sections = RouteService.between(data, journey[0], journey[1]);
+        return sections.isEmpty() ? Optional.empty() : Optional.of(sections);
     }
 
     public EventLog eventLog() {
