@@ -40,7 +40,7 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 - [ ] Test on the real LAN: discovery across machines; multicast or fallback — not yet done (needs a second physical machine)
 
 ## Phase 4 — UI & evidence
-- [x] `UdpMulticastPanel`: Discover button + result/timeout message; Subscribe/Unsubscribe; received alerts list with time — **note:** sender IP is not shown; `MulticastAlertSubscriber`'s callback type is the frozen `Consumer<Message>`, which does not carry the datagram's source address (documented as a limitation in the module doc)
+- [x] `UdpMulticastPanel`: Discover button + result/timeout message. Subscribe, the alert feed and Trigger obstruction are on `AlertsPanel` (UI-3). Sender IP is not shown; `MulticastAlertSubscriber`'s callback type is the frozen `Consumer<Message>`, which does not carry the datagram's source address (documented as a limitation in the module doc)
 - [ ] Screenshots/logs: discovery request + reply (done, see module doc), two clients receiving one alert (not available on this host - no multicast route; will capture on the real demo LAN), INACTIVE after timeout (done, see `HeartbeatMonitorTest` passing)
 
 ## Phase 5 — Test, docs, demo

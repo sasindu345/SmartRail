@@ -27,7 +27,8 @@ scripts/run.sh train TR01             # Discover button (Discovery & alerts tab)
 | `MulticastAlertSubscriber` | `start()` / `stop()` | calls `onAlert` for each `EMERGENCY_ALERT` | `joinGroup`/`leaveGroup` with an explicit `NetworkInterface`; non-alert datagrams ignored |
 | `HeartbeatMonitor` (`HeartbeatTracker`, `NetworkService`) | `recordHeartbeat(trainId)` | `isAlive(trainId)`, calls `railway.markInactive` | scheduled check every `heartbeat.interval.ms`; marks a train inactive once per silence, clears on the next heartbeat |
 | `HeartbeatSender` | `start()` / `stop()` | periodic `HEARTBEAT` via the injected sink | survives send failures; `start()` is idempotent (restarts cleanly) |
-| `UdpMulticastPanel` | Discover / Subscribe buttons | discovery result, alert list | `stopSubscription()` exposed for the owning window to call on close |
+| `UdpMulticastPanel` | Discover button, services table, interface list | discovery result or timeout; each service endpoint or failure | alert subscribe/feed lives on `AlertsPanel` |
+| `AlertsPanel` | Subscribe / Unsubscribe, Trigger obstruction | received `EMERGENCY_ALERT` lines and the path used (multicast, or unicast fallback) | `stopSubscription()` on window close |
 
 ## Configuration keys used
 `protocol.service.name`, `protocol.version`, `protocol.max.message.bytes`, `server.advertised.host`,
@@ -83,5 +84,5 @@ routable UDP.
   explicitly if the wrong NIC is chosen.
 - The unicast fallback targets the IP each train's TCP/TLS connection is seen from; it does not work for a
   train that has never registered (no known IP yet).
-- `UdpMulticastPanel`'s alert list shows time + section + reason, not the sender's IP — `MulticastAlertSubscriber`'s
+- `AlertsPanel`'s feed shows time, direction and reason, not the sender's IP — `MulticastAlertSubscriber`'s
   callback is `Consumer<Message>` (a frozen shared type) and does not carry the datagram's source address.
