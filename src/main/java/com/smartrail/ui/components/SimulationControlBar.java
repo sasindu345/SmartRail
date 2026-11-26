@@ -9,18 +9,19 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Control bar for simulation and process lifecycle:
- * [Start/Stop Server] [+TR01] [+TR02] [+TR03 (TLS)] [Stop All].
+ * Control bar for simulation and process lifecycle.
+ * Train buttons come from the railway data, plus Reset and Stop All.
  * Owner: Member 3 (control-center-spec.md §3, design-system.md §4).
  */
 public class SimulationControlBar extends JPanel {
 
     private final JButton serverToggleBtn;
-    private final JButton tr01Btn;
-    private final JButton tr02Btn;
-    private final JButton tr03Btn;
+    private final List<JButton> trainButtons = new ArrayList<>();
+    private final JButton resetBtn;
     private final JButton stopAllBtn;
 
     private boolean serverRunning = false;
@@ -28,10 +29,11 @@ public class SimulationControlBar extends JPanel {
     public interface ControlListener {
         void onToggleServer();
         void onLaunchTrain(String trainId, boolean tls);
+        void onReset();
         void onStopAll();
     }
 
-    public SimulationControlBar(ControlListener listener) {
+    public SimulationControlBar(ControlListener listener, List<String> trainIds) {
         super(new BorderLayout());
         setOpaque(true);
         setBackground(Theme.SURFACE);
@@ -56,30 +58,28 @@ public class SimulationControlBar extends JPanel {
             }
         });
 
-        tr01Btn = new JButton("+TR01");
-        tr01Btn.setFont(Theme.FONT_BODY_BOLD);
-        tr01Btn.setFocusPainted(false);
-        tr01Btn.addActionListener(e -> {
-            if (listener != null) {
-                listener.onLaunchTrain("TR01", false);
-            }
-        });
+        buttonPanel.add(serverToggleBtn);
+        buttonPanel.add(Box.createHorizontalStrut(Theme.PAD));
+        for (String trainId : trainIds) {
+            JButton button = new JButton("+" + trainId);
+            button.setFont(Theme.FONT_BODY_BOLD);
+            button.setFocusPainted(false);
+            button.addActionListener(e -> {
+                if (listener != null) {
+                    listener.onLaunchTrain(trainId, false);
+                }
+            });
+            trainButtons.add(button);
+            buttonPanel.add(button);
+            buttonPanel.add(Box.createHorizontalStrut(Theme.GAP));
+        }
 
-        tr02Btn = new JButton("+TR02");
-        tr02Btn.setFont(Theme.FONT_BODY_BOLD);
-        tr02Btn.setFocusPainted(false);
-        tr02Btn.addActionListener(e -> {
+        resetBtn = new JButton("Reset");
+        resetBtn.setFont(Theme.FONT_BODY_BOLD);
+        resetBtn.setFocusPainted(false);
+        resetBtn.addActionListener(e -> {
             if (listener != null) {
-                listener.onLaunchTrain("TR02", false);
-            }
-        });
-
-        tr03Btn = new JButton("+TR03 (TLS)");
-        tr03Btn.setFont(Theme.FONT_BODY_BOLD);
-        tr03Btn.setFocusPainted(false);
-        tr03Btn.addActionListener(e -> {
-            if (listener != null) {
-                listener.onLaunchTrain("TR03", true);
+                listener.onReset();
             }
         });
 
@@ -93,13 +93,7 @@ public class SimulationControlBar extends JPanel {
             }
         });
 
-        buttonPanel.add(serverToggleBtn);
-        buttonPanel.add(Box.createHorizontalStrut(Theme.PAD));
-        buttonPanel.add(tr01Btn);
-        buttonPanel.add(Box.createHorizontalStrut(Theme.GAP));
-        buttonPanel.add(tr02Btn);
-        buttonPanel.add(Box.createHorizontalStrut(Theme.GAP));
-        buttonPanel.add(tr03Btn);
+        buttonPanel.add(resetBtn);
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(stopAllBtn);
 
@@ -128,9 +122,10 @@ public class SimulationControlBar extends JPanel {
      */
     public void setActionsInFlight(boolean inFlight) {
         serverToggleBtn.setEnabled(!inFlight);
-        tr01Btn.setEnabled(!inFlight);
-        tr02Btn.setEnabled(!inFlight);
-        tr03Btn.setEnabled(!inFlight);
+        for (JButton button : trainButtons) {
+            button.setEnabled(!inFlight);
+        }
+        resetBtn.setEnabled(!inFlight);
         stopAllBtn.setEnabled(!inFlight);
     }
 }

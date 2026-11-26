@@ -1,39 +1,35 @@
 package com.smartrail.ui.shell;
 
-import com.smartrail.common.log.EventLog;
 import com.smartrail.ui.components.Card;
 import com.smartrail.ui.components.NavSidebar;
 import com.smartrail.ui.components.NetworkStatusBar;
 import com.smartrail.ui.components.SimulationControlBar;
-import com.smartrail.ui.components.StatusPill;
-import com.smartrail.ui.components.TableStyles;
 import com.smartrail.ui.components.TopBar;
+import com.smartrail.ui.panels.EventLogPanel;
+import com.smartrail.ui.panels.NioServerPanel;
 import com.smartrail.ui.panels.RmiHandlerPanel;
 import com.smartrail.ui.panels.TlsResourcePanel;
+import com.smartrail.ui.panels.TrackSectionsPanel;
 import com.smartrail.ui.panels.UdpMulticastPanel;
 import com.smartrail.ui.theme.Theme;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.Timer;
 import javax.swing.WindowConstants;
-import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -99,6 +95,9 @@ public final class ControlCenterWindow extends JFrame {
         setupScreens();
 
         // 4. Simulation Control Bar
+        List<String> trainIds = controller.railwayData().trains().stream()
+                .map(train -> train.trainId())
+                .toList();
         controlBar = new SimulationControlBar(new SimulationControlBar.ControlListener() {
             @Override
             public void onToggleServer() {
@@ -111,10 +110,15 @@ public final class ControlCenterWindow extends JFrame {
             }
 
             @Override
+            public void onReset() {
+                handleReset();
+            }
+
+            @Override
             public void onStopAll() {
                 handleStopAll();
             }
-        });
+        }, trainIds);
 
         // 5. Network Status Bar
         statusBar = new NetworkStatusBar();
@@ -179,43 +183,7 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createOverviewScreen() {
-        JPanel panel = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
-        panel.setOpaque(false);
-
-        Card card = new Card("Railway Network Overview");
-        JPanel inner = new JPanel();
-        inner.setOpaque(false);
-        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
-
-        JLabel info = new JLabel("Central Railway Traffic Network Map and Train Overview.");
-        info.setFont(Theme.FONT_BODY);
-        info.setForeground(Theme.TEXT_MUTED);
-
-        JLabel status = new JLabel("● Ready for Member 1 UI-1 components (NetworkMapPanel, TrackSectionsPanel).");
-        status.setFont(Theme.FONT_BODY);
-        status.setForeground(Theme.PRIMARY);
-
-        inner.add(info);
-        inner.add(Box.createVerticalStrut(Theme.GAP));
-        inner.add(status);
-        inner.add(Box.createVerticalStrut(Theme.PAD));
-
-        // Quick active services table
-        String[][] data = {
-                {"NIO TCP Server", "Port " + controller.config().getInt("nio.tcp.port")},
-                {"UDP Discovery", "Port " + controller.config().getInt("udp.discovery.port")},
-                {"Multicast Alerts", controller.config().get("multicast.group") + ":" + controller.config().getInt("multicast.port")},
-                {"TLS Server", "Port " + controller.config().getInt("tls.port")}
-        };
-        JTable table = new JTable(data, new String[]{"Service Name", "Configured Endpoint"});
-        TableStyles.apply(table);
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.setPreferredSize(new Dimension(500, 160));
-        inner.add(scroll);
-
-        card.setBody(inner);
-        panel.add(card, BorderLayout.CENTER);
-        return panel;
+        return new NioServerPanel(controller);
     }
 
     private JPanel createTrainsScreen() {
@@ -235,10 +203,9 @@ public final class ControlCenterWindow extends JFrame {
         topInfo.add(Box.createVerticalStrut(Theme.GAP));
         headerCard.setBody(topInfo);
 
-        // Per-train console tabs (TR01, TR02, TR03, ALL)
-        createTrainConsoleTab("TR01");
-        createTrainConsoleTab("TR02");
-        createTrainConsoleTab("TR03");
+        for (String trainId : controller.railwayData().trains().stream().map(train -> train.trainId()).toList()) {
+            createTrainConsoleTab(trainId);
+        }
         createTrainConsoleTab("ALL");
 
         Card consoleCard = new Card("Child Process Console Output (Piped stdout / stderr)");
@@ -273,29 +240,7 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createTrackSectionsScreen() {
-        JPanel panel = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
-        panel.setOpaque(false);
-
-        Card card = new Card("Track Sections & Mutual Exclusion");
-        JPanel inner = new JPanel();
-        inner.setOpaque(false);
-        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
-
-        JLabel info = new JLabel("Exclusive track sections coordination (SEC_A, SEC_B, SEC_C, SEC_D).");
-        info.setFont(Theme.FONT_BODY);
-        info.setForeground(Theme.TEXT_MUTED);
-
-        JLabel status = new JLabel("● Ready for Member 1 UI-1 conflict demo (TrackSectionsPanel).");
-        status.setFont(Theme.FONT_BODY);
-        status.setForeground(Theme.PRIMARY);
-
-        inner.add(info);
-        inner.add(Box.createVerticalStrut(Theme.GAP));
-        inner.add(status);
-
-        card.setBody(inner);
-        panel.add(card, BorderLayout.CENTER);
-        return panel;
+        return new TrackSectionsPanel(controller);
     }
 
     private JPanel createAlertsScreen() {
@@ -353,35 +298,7 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createEventLogScreen() {
-        JPanel panel = new JPanel(new BorderLayout(Theme.GAP, Theme.GAP));
-        panel.setOpaque(false);
-
-        Card card = new Card("Central Server Event Log");
-        JTextArea logArea = new JTextArea();
-        logArea.setEditable(false);
-        logArea.setFont(Theme.FONT_MONO);
-        logArea.setBackground(Theme.SURFACE);
-        logArea.setForeground(Theme.TEXT);
-
-        JScrollPane scroll = new JScrollPane(logArea);
-        scroll.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
-
-        // Periodic poll of EventLog to keep display fresh without blocking
-        Timer logTimer = new Timer(1000, e -> {
-            EventLog log = controller.eventLog();
-            if (log != null) {
-                StringBuilder sb = new StringBuilder();
-                for (EventLog.Entry entry : log.snapshot()) {
-                    sb.append(entry.toString()).append("\n");
-                }
-                logArea.setText(sb.toString());
-            }
-        });
-        logTimer.start();
-
-        card.setBody(scroll);
-        panel.add(card, BorderLayout.CENTER);
-        return panel;
+        return new EventLogPanel(controller);
     }
 
     // ---- Handlers for control bar actions ----
@@ -409,10 +326,19 @@ public final class ControlCenterWindow extends JFrame {
             } catch (IOException e) {
                 appendTrainOutput(trainId, "[SUPERVISOR ERROR] Failed to spawn train: " + e.getMessage());
             } finally {
-                UiThreads.onEdt(() -> {
-                    controlBar.setActionsInFlight(false);
-                    navSidebar.select(NavSidebar.TRAINS);
-                });
+                UiThreads.onEdt(() -> controlBar.setActionsInFlight(false));
+            }
+        });
+    }
+
+    private void handleReset() {
+        controlBar.setActionsInFlight(true);
+        UiThreads.runInBackground(() -> {
+            try {
+                supervisor.stopAllTrains();
+                controller.resetSimulation();
+            } finally {
+                UiThreads.onEdt(() -> controlBar.setActionsInFlight(false));
             }
         });
     }

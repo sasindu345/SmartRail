@@ -153,6 +153,19 @@ public final class SimulationController {
     }
 
     /**
+     * Parks every train at its configured start station and frees every section.
+     * The server keeps listening. Call this after the train processes have been stopped.
+     */
+    public synchronized void resetSimulation() {
+        if (railway == null) {
+            log.log("SERVER", "Reset ignored: server is not running");
+            return;
+        }
+        railway.resetToStart();
+        log.log("SERVER", "Simulation reset: each train is at its start station and every section is free");
+    }
+
+    /**
      * Stop all running server services.
      */
     public synchronized void stopServer() {
