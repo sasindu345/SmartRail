@@ -13,7 +13,7 @@ import java.util.List;
  * train telemetry stays on TCP/TLS).
  *
  * <p>Every return/parameter type is Serializable (records in common.model). Changing this interface
- * breaks the controller dashboard - coordinate with the team first.
+ * breaks the Administration screen - coordinate with the team first.
  */
 public interface RailwayAdminRemote extends Remote {
 

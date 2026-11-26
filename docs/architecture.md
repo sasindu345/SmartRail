@@ -9,15 +9,9 @@ demo runs from buttons. Specification: `docs/ui/control-center-spec.md`.
 | Process | Launcher | Contains |
 |---|---|---|
 | SmartRail Control Center (the demo window) | `app/ControlCenterApp` | All server services in-process + the single UI; spawns/stops train processes via `TrainProcessSupervisor` |
-| Train client (one real JVM per train, 2–3 running) | `app/TrainClientApp <TRAIN_ID>` | TCP/TLS client, simulator, heartbeat sender, alert subscriber; headless when spawned by the Control Center (`ui.train.window.enabled=false`), stdout piped into its console view |
+| Train client (one real JVM per train, 2–3 running) | `app/TrainClientApp <TRAIN_ID>` | Headless TCP/TLS client, simulator, heartbeat sender, alert subscriber; stdout piped into the Control Center console view |
 
-**LAN mode (unchanged).** For a multi-machine run the original launchers still work:
-
-| Process | Launcher | Contains |
-|---|---|---|
-| Central railway control server | `app/ServerApp` | All server services + server window |
-| Train client | `app/TrainClientApp <TRAIN_ID>` | as above, with its own window |
-| Controller / administrator dashboard | `app/ControllerApp` | UDP discovery, URLConnection client, RMI client, smartrail:// + content handlers |
+**LAN mode.** Server and trains are the same headless processes, pointed at another machine's IP. Administration stays on the Control Center Admin screen. There is no second window.
 
 ## Server wiring (`ServerApp`)
 
@@ -79,7 +73,7 @@ Until Member 1's implementation is ready, other members test against `testsuppor
 4. **Run** – `REQUEST_SECTION` → `SECTION_GRANTED/DENIED` (atomic, M1); `POSITION` → `ACK`; `HEARTBEAT` every interval (M3).
 5. **Fail** – client stops → no heartbeat → `INACTIVE` after timeout (M3 → M1).
 6. **Obstruction** – admin `reportObstruction` over RMI (M5) → `RailwayService` (M1) → multicast `EMERGENCY_ALERT` (M3) → all trains.
-7. **Control** – admin `requestSimulatedHold(TR02)` over RMI (M5) → M1 pushes `HOLD|TR02` over that train's TCP/TLS connection → train window shows HELD (M2).
+7. **Control** – admin `requestSimulatedHold(TR02)` over RMI (M5) → M1 pushes `HOLD|TR02` over that train's TCP/TLS connection → that train's console shows HELD (M2).
 8. **Resources** – dashboard GET `/api/schedules` via `URLConnection` (M4); `smartrail://host:5100/trains/TR01` via custom handler (M5); the content handler (M5) turns `application/x-smartrail-*` into `TrainInfo`/`TrackInfo`/`ScheduleInfo`.
 
 ## Threads (no blocking on the Swing EDT)

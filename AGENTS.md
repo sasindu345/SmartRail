@@ -26,7 +26,7 @@ No member starts UI work before their networking concept passes its tests.
 | Member | Networking concept(s) | Packages / files they own |
 |---|---|---|
 | 1 | **Java NIO** (ServerSocketChannel, Selector, ByteBuffer), TCP server, message framing, server-side coordination | `nio/`, `coordination/`, `ui/panels/NioServerPanel.java`, `NetworkMapPanel.java`, `TrackSectionsPanel.java`, `EventLogPanel.java` |
-| 2 | **TCP client sockets + I/O streams**, **IP addressing / InetAddress / ports** | `tcpclient/`, `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java`, `ui/panels/TcpClientPanel.java`, `TrainsPanel.java` |
+| 2 | **TCP client sockets + I/O streams**, **IP addressing / InetAddress / ports** | `tcpclient/`, `ui/panels/TcpClientPanel.java`, `TrainsPanel.java` |
 | 3 | **UDP datagrams** (discovery), **IP multicast** (alerts), **heartbeat** availability, **Control Center shell foundation** | `udp/`, `multicast/`, `heartbeat/`, `ui/panels/UdpMulticastPanel.java`, `AlertsPanel.java`, `app/ControlCenterApp.java`, `ui/shell/ControlCenterWindow.java`, `SimulationController.java`, `TrainProcessSupervisor.java`, `ui/theme/`, `ui/components/` |
 | 4 | **TLS** (SSLContext, SSLServerSocket/SSLSocket, keystores), **URL / URLConnection** + HTTP resources | `tls/`, `urlconnection/`, `scripts/generate-dev-certs.sh`, `ui/panels/TlsResourcePanel.java` |
 | 5 | **Java RMI**, **custom protocol handler** (`smartrail://`), **content handlers** | `rmi/`, `protocolhandler/`, `contenthandler/`, `META-INF/services/…`, `ui/panels/RmiHandlerPanel.java` |
@@ -68,10 +68,9 @@ Full file-by-file list: `docs/ownership.md`. Each member's plan and checklist: `
 - Work only in the files of the member/concept the user is working on (see table above).
 - `common/**`, `app/**`, `UiThreads`, `config/**` and `pom.xml` are **frozen shared contracts**. Do not edit them
   unless the user explicitly asks; then the change must be agreed by the team in one PR that updates the docs too.
-- Four changes to those frozen files are **already agreed** for the Control Center and need no further sign-off
-  (`docs/ui/control-center-spec.md` §7): the FlatLaf dependency in `pom.xml`; the `ui.train.window.enabled` key
-  in `config/smartrail.properties` + `ConfigKeys`; honouring that flag in `app/TrainClientApp.java`; and the
-  `controlcenter` role in `scripts/run.sh`. Nothing else there may change — in particular `common/service/**`,
+- Changes already agreed for the Control Center (`docs/ui/control-center-spec.md` §7): the FlatLaf dependency
+  in `pom.xml` and the `controlcenter` role in `scripts/run.sh`. Train clients are headless; there is no
+  second window. Nothing else in the frozen files may change — in particular `common/service/**`,
   `common/protocol/**` and `common/model/**` stay exactly as they are.
 - Cross-module calls go **only through the interfaces in `common/service`** (`RailwayService`, `MessageHandler`,
   `TrainConnection`, `ClientSocketFactory`, `AlertService`, `HeartbeatTracker`, `NetworkService`).
@@ -118,12 +117,11 @@ mvn verify                         # compile + all tests (must pass before every
 mvn -q test -Dtest=ProtocolCodecTest
 scripts/run.sh controlcenter       # the single demo window (starts services + trains from buttons)
 ```
-The three original launchers still work and are used for a multi-machine LAN run:
+Headless launchers for a multi-machine LAN run (no extra windows):
 ```bash
-scripts/run.sh server              # central server only (+ server window)
+scripts/run.sh server              # central server only
 scripts/run.sh train TR01          # a train client; TR02/TR03 in other terminals
 scripts/run.sh train TR02 -Dclient.transport=TLS
-scripts/run.sh controller          # controller window (UDP / URLConnection / RMI / smartrail://)
 ```
 Run everything from the project root (config paths are relative to it). Java 21, Maven 3.9+.
 

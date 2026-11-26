@@ -26,7 +26,7 @@ The Control Center is a single window in a single JVM. It does two things:
    started, failed or is stopped. Real ports are bound.
 2. **Launches each train as a real, separate JVM process** through `TrainProcessSupervisor`
    (`ProcessBuilder`, `java.home/bin/java`, the current `java.class.path`, running the existing
-   `com.smartrail.app.TrainClientApp` with `-Dui.train.window.enabled=false`). Each child's stdout
+   `com.smartrail.app.TrainClientApp`, which is headless). Each child's stdout
    is piped back and shown in its own console view inside the window.
 
 ```
@@ -59,8 +59,9 @@ The Control Center is a single window in a single JVM. It does two things:
 real TCP/TLS sockets to real bound ports; UDP discovery, multicast and RMI all cross real process
 boundaries. Nothing is simulated in-memory.
 
-`ServerApp`, `TrainClientApp` and `ControllerApp` keep working unchanged, so a multi-machine LAN
+`ServerApp` and `TrainClientApp` stay as headless processes, so a multi-machine LAN
 demonstration is still possible (`scripts/run.sh server` on one laptop, trains on another).
+The Control Center is the only window.
 
 ## 3. Window chrome (owner: M3)
 
@@ -160,9 +161,8 @@ and no networking code changes at all.
 | File | Change |
 |---|---|
 | `pom.xml` | add the FlatLaf dependency (the first runtime dependency) |
-| `config/smartrail.properties` + `common/config/ConfigKeys.java` | add `ui.train.window.enabled` (default `true`) |
-| `app/TrainClientApp.java` | honour that flag when creating `TrainClientWindow` |
-| `scripts/run.sh` | add the `controlcenter` role |
+| `app/TrainClientApp.java` | train process stays headless; no separate train window |
+| `scripts/run.sh` | add the `controlcenter` role; do not launch a second UI |
 
 `common/service/**`, `common/protocol/**` and `common/model/**` are **not** touched — in particular
 `NetworkService` keeps its current four methods; the Control Center records service status itself.

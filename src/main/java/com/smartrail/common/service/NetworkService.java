@@ -8,7 +8,7 @@ package com.smartrail.common.service;
  */
 public interface NetworkService {
 
-    /** Human-readable name shown in logs and the server window. */
+    /** Human-readable name shown in logs and the Control Center. */
     String name();
 
     /** Where the service listens, e.g. {@code "TCP 0.0.0.0:5000"}; read from config, never hard-coded. */

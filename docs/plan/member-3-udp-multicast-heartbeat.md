@@ -36,7 +36,7 @@ membership, TTL, one-to-many), heartbeat-based availability monitoring.
 ## Phase 3 — Integration
 - [ ] C4 with M2: discovery fills the train's host/port — **blocked on M2**: `TcpClientPanel.useDiscoveredServer` is still `TODO(M2)`; my side (`DiscoveryClient` → `UdpMulticastPanel` → `onDiscovered.accept(...)`) is ready and was verified to work in a real two-process run (see module doc)
 - [ ] C5 with M1: stopping a train → INACTIVE on the server panel after timeout — **blocked on M1**: `RailwayServiceImpl`/`NioTrainServer` are still stubs; `HeartbeatMonitor` itself is verified against `FakeRailwayService` in `HeartbeatMonitorTest`
-- [ ] C7 with M1/M5: `reportObstruction` → all train windows show the alert — **blocked on M1**: `RailwayServiceImpl.reportObstruction` is still a stub (M5's RMI call already reaches it, see `RailwayAdminServiceTest`); my `AlertService` side is ready and covered by `MulticastAlertTest`
+- [ ] C7 with M1/M5: `reportObstruction` → all train consoles show the alert — **blocked on M1**: `RailwayServiceImpl.reportObstruction` is still a stub (M5's RMI call already reaches it, see `RailwayAdminServiceTest`); my `AlertService` side is ready and covered by `MulticastAlertTest`
 - [ ] Test on the real LAN: discovery across machines; multicast or fallback — not yet done (needs a second physical machine)
 
 ## Phase 4 — UI & evidence

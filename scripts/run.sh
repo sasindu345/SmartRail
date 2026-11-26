@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Run a SmartRail process from the project root.
+#   scripts/run.sh controlcenter
 #   scripts/run.sh server
 #   scripts/run.sh train TR02 [-Dclient.transport=TLS]
-#   scripts/run.sh controller
 # Any -Dkey=value argument overrides config/smartrail.properties for that process.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,9 +12,8 @@ role="${1:-}"
 case "$role" in
   server)        main=com.smartrail.app.ServerApp ;;
   train)         main=com.smartrail.app.TrainClientApp ;;
-  controller)    main=com.smartrail.app.ControllerApp ;;
   controlcenter) main=com.smartrail.app.ControlCenterApp ;;
-  *) echo "usage: scripts/run.sh server|train [TRAIN_ID]|controller|controlcenter [-Dkey=value ...]" >&2; exit 1 ;;
+  *) echo "usage: scripts/run.sh controlcenter|server|train [TRAIN_ID] [-Dkey=value ...]" >&2; exit 1 ;;
 esac
 
 mvn -q -DskipTests compile dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=target/dependency

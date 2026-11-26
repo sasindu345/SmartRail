@@ -1,7 +1,7 @@
 # SmartRail — Railway Traffic Coordination Simulator
 
 A five-member **Java Network Programming** project. A central Java server coordinates independent train
-clients, predefined routes and exclusive track sections; a controller dashboard monitors and administers
+clients, predefined routes and exclusive track sections; the Control Center monitors and administers
 the network.
 
 > **Educational simulation only.** SmartRail is not railway signalling or safety software and must never be
@@ -45,11 +45,10 @@ The Control Center hosts the server services in-process and launches each train 
 JVM process**, streaming its console into the window; no terminal is needed during a demonstration.
 See [docs/ui/demo-flow.md](docs/ui/demo-flow.md).
 
-For a multi-machine LAN run the original launchers still work:
+For a multi-machine LAN run the server and trains stay headless. The only window is the Control Center:
 ```bash
-scripts/run.sh server               # machine 1: central server
-scripts/run.sh train TR01           # machine 2
-scripts/run.sh controller           # controller dashboard
+scripts/run.sh server               # machine 1: central server, no window
+scripts/run.sh train TR01           # machine 2: headless train
 ```
 Windows / IDE: run the `main` classes in `com.smartrail.app` with the project root as working directory, or
 `java -cp target/classes com.smartrail.app.ServerApp` after `mvn compile`.
@@ -72,7 +71,7 @@ docs/modules/           one module README per member
 docs/ui/                Control Center spec · design system · demo flow
 src/main/java/com/smartrail/
   common/               SHARED, frozen contracts: config, protocol, model, service interfaces, resource, log
-  app/                  launchers: ServerApp, TrainClientApp, ControllerApp (shared) + ControlCenterApp (M2)
+  app/                  launchers: ServerApp, TrainClientApp (headless) + ControlCenterApp (the one window)
   nio/  coordination/   Member 1
   tcpclient/            Member 2
   udp/  multicast/  heartbeat/          Member 3

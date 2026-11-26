@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * Owner: Member 3 (control-center-spec.md §2-§3).
  *
  * <p>Spawns each train as an independent JVM process using {@link ProcessBuilder} with
- * {@code -Dui.train.window.enabled=false}, pipes each child's stdout/stderr to listeners,
+ * Train clients are headless; this class pipes each child's stdout/stderr to listeners,
  * and ensures all child processes are killed cleanly on exit.
  *
  * <p><strong>Rule:</strong> This is the ONLY class in the entire project permitted to use
@@ -77,9 +77,12 @@ public final class TrainProcessSupervisor {
         command.add(javaBin);
         command.add("-cp");
         command.add(classPath);
-        command.add("-Dui.train.window.enabled=false");
         if (tls) {
             command.add("-Dclient.transport=TLS");
+        }
+        String trainPort = System.getProperty("nio.tcp.port");
+        if (trainPort != null && !trainPort.isBlank()) {
+            command.add("-Dnio.tcp.port=" + trainPort);
         }
         command.add("com.smartrail.app.TrainClientApp");
         command.add(trainId);

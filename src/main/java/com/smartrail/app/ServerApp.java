@@ -16,10 +16,7 @@ import com.smartrail.rmi.RmiAdminServer;
 import com.smartrail.tls.TlsTrainServer;
 import com.smartrail.udp.DiscoveryResponder;
 import com.smartrail.urlconnection.ResourceHttpServer;
-import com.smartrail.ui.shell.ServerWindow;
 
-import javax.swing.SwingUtilities;
-import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +26,9 @@ import java.util.function.Supplier;
  * SHARED launcher: the central railway control server. Wires every member's services through the
  * shared interfaces and starts each one independently - a service that is not implemented yet (or fails)
  * is logged as NOT AVAILABLE and the rest keep running. Members should not need to edit this file.
+ *
+ * <p>Headless. The only demonstration window is the Control Center
+ * ({@code scripts/run.sh controlcenter}). This launcher is the LAN server process.
  *
  * <p>Run: {@code scripts/run.sh server}
  */
@@ -75,9 +75,6 @@ public final class ServerApp {
             shutdown.countDown();
         }, "shutdown"));
 
-        if (!GraphicsEnvironment.isHeadless() && config.getBoolean(ConfigKeys.UI_SERVER_WINDOW_ENABLED)) {
-            SwingUtilities.invokeLater(() -> new ServerWindow(ctx, services).setVisible(true));
-        }
         shutdown.await();
     }
 

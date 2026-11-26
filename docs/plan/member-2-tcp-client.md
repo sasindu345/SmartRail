@@ -8,7 +8,7 @@ resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 `docs/modules/m2-tcp-client.md`.
 
 **You provide:** `PlainSocketFactory` (`ClientSocketFactory`), `TrainClient` (used by M3's heartbeat sender through
-`client::send`), the three window shells hosting every member's panel.
+`client::send`). The only window is the Control Center; train processes are headless.
 **You use:** `ClientSocketFactory` (M4's `TlsSocketFactory` for TLS), `DiscoveredServer` (M3), M1's server.
 **Agent:** `.claude/agents/m2-tcp-client.md` · **Branch prefix:** `m2/`
 

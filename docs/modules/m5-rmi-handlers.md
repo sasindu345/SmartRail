@@ -16,14 +16,10 @@ Member 5 implements and demonstrates three fundamental networking concepts from 
 
 ## How to Start / See It
 ```bash
-# Terminal 1: Start Central Server (includes RMI registry and smartrail:// resource server)
-scripts/run.sh server
-
-# Terminal 2: Start Controller Dashboard (contains Member 5's RmiHandlerPanel)
-scripts/run.sh controller
-
-# Connect via the top panel to localhost:1099, trigger hold/resume commands,
-# or inspect resources via smartrail://localhost:5100/trains
+scripts/run.sh controlcenter
+# Start Server, then open Admin.
+# Connect to localhost:1099, trigger hold/resume,
+# or inspect smartrail://localhost:5100/trains
 ```
 
 ## Public Classes and Methods
@@ -48,7 +44,7 @@ scripts/run.sh controller
 | `TrainContentHandler.getContent(conn)` | `URLConnection` | `List<TrainInfo>` | Decodes payload to typed list; throws `IOException` on malformed payload. |
 | `TrackContentHandler.getContent(conn)` | `URLConnection` | `List<TrackInfo>` | Decodes track records into typed `TrackInfo` list. |
 | `ScheduleContentHandler.getContent(conn)` | `URLConnection` | `List<ScheduleInfo>` | Decodes schedule records into typed `ScheduleInfo` list. |
-| `RmiHandlerPanel` | `NetworkConfig` | `JPanel` | GUI for controller dashboard using `UiThreads` for background execution and EDT safety. |
+| `RmiHandlerPanel` | `NetworkConfig` | `JPanel` | Administration screen inside the Control Center. Network work uses `UiThreads`. |
 
 ## Configuration Keys Used
 | Configuration Key | Purpose | Default |
