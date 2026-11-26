@@ -75,7 +75,7 @@ routable UDP.
   the datagram-decoding and unicast-fallback tests passed) — multicast was genuinely unavailable on the
   development machine used (active VPN tunnels), which is itself evidence for the fallback requirement.
 - On the real demo LAN, re-run `MulticastAlertTest` and replace this note with "0 skipped" plus a screenshot
-  of the server log showing `[MULTICAST] Published EMERGENCY_ALERT|...` and both train windows' alert lists.
+  of the server log showing `[MULTICAST] Published EMERGENCY_ALERT|...` and both train consoles.
 
 ## Limitations
 - The multicast outgoing interface is picked automatically when `multicast.interface` is blank (first

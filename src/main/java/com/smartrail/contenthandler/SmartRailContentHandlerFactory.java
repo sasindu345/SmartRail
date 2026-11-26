@@ -7,7 +7,7 @@ import java.net.ContentHandlerFactory;
 
 /**
  * OWNER: Member 5 - CONCEPT: content handler factory - maps a MIME type to the handler that
- * INTERPRETS the returned content. Installed once per JVM by ControllerApp with
+ * INTERPRETS the returned content. Installed once per JVM by the Administration screen with
  * {@code URLConnection.setContentHandlerFactory(...)}.
  * <ul>
  *   <li>{@link ResourceTypes#MIME_TRAIN} -> TrainContentHandler,

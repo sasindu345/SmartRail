@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 /**
  * Thread-safe in-memory event log (bounded). Every module logs network activity here so the
- * server window, RMI {@code getEventLog()} and the demo can show it. SHARED CONTRACT (frozen).
+ * Control Center event log, RMI {@code getEventLog()} and the demo can show it. SHARED CONTRACT (frozen).
  *
  * <p>Listeners are called on the logging thread - Swing code must hop to the EDT
  * (see {@code ui.shell.UiThreads}).

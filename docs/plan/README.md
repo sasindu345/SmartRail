@@ -18,7 +18,7 @@ frozen interfaces in `common/service`, and tests in isolation with `testsupport`
 | **0 — Setup & freeze** | days 1–2 | Everyone builds the baseline, reads the contracts, creates their branch | all 5 run `mvn verify` green; contracts frozen |
 | **1 — Concept core** | week 1 | Each member gets their *networking API* working in isolation (tests / small manual run) | each core demo works alone |
 | **2 — Module complete** | week 2 | Full module behaviour, error handling, unit tests (fakes) | each member's tests pass, PR merged |
-| **3 — Integration** | week 3 | Real end-to-end through `ServerApp` / `TrainClientApp` / `ControllerApp` | integration checkpoints C1–C8 pass |
+| **3 — Integration** | week 3 | Real end-to-end through `ServerApp` / `TrainClientApp` and the Control Center | integration checkpoints C1–C8 pass |
 | **4 — Evidence** | week 4 | Screenshots/logs for the report (UI screens are tracked in the separate UI issues) | every feature evidenced |
 | **5 — Test, docs, demo** | week 5 | Test plan executed on a real LAN, module docs, report section, rehearsal | 10-minute demo runs twice without restart |
 
@@ -46,7 +46,7 @@ Merge to `main` at least once per phase — integrate continuously, never at the
 | ID | Checkpoint | Members | Check |
 |---|---|---|---|
 | C1 | `RailwayServiceImpl` + router merged (replaces fakes) | 1 | server starts; `/api/trains` via curl not needed yet |
-| C2 | Train registers over plain NIO channel | 1 + 2 | `REGISTER_OK` + `ASSIGN_ROUTE` in train window |
+| C2 | Train registers over plain NIO channel | 1 + 2 | `REGISTER_OK` + `ASSIGN_ROUTE` in the train console |
 | C3 | Same train over TLS | 4 + 2 (+1 router) | `-Dclient.transport=TLS` works; untrusted cert rejected |
 | C4 | Discovery fills the train's host/port | 3 + 2 | Discover button → connect without typing IP |
 | C5 | Heartbeat → INACTIVE | 3 + 1 | kill a train → INACTIVE after `heartbeat.timeout.ms` |
@@ -61,9 +61,8 @@ Merge to `main` at least once per phase — integrate continuously, never at the
 - Before C1, Members 3/4/5 use `FakeRailwayService`; Member 4's TLS server can use a fake `MessageHandler` in tests.
 - Member 2 can test `TrainClient` against a tiny `ServerSocket` in the test or against `nc -l <port>`.
 - Member 1 can test the server with `nc localhost 5000` (type protocol lines by hand) before Member 2 is ready.
-- Nobody edits `ServerApp`/`TrainClientApp`/`ControllerApp` — they already wire every class (the new
-  `ControlCenterApp` and the one approved `ui.train.window.enabled` guard in `TrainClientApp` are M3's, as
-  the owner of UI-0).
+- Nobody edits `ServerApp`/`TrainClientApp` except to keep them headless. `ControlCenterApp` is M3's,
+  and it is the only window.
 
 ## Workload balance (target ≈ 20% each)
 

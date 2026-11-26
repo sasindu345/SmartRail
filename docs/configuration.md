@@ -37,7 +37,7 @@ Many campus Wi-Fi networks block multicast — then set `multicast.unicast.fallb
 | `protocol.max.message.bytes` | max protocol line size |
 | `railway.data.path` | railway model file |
 | `log.capacity` | in-memory event log size |
-| `server.bind.address`, `server.advertised.host`, `ui.server.window.enabled` | server |
+| `server.bind.address`, `server.advertised.host` | server |
 | `client.server.host`, `client.transport` (`PLAIN`/`TLS`), `client.default.train.id` | clients |
 | `client.connect.timeout.ms`, `client.reconnect.attempts`, `client.reconnect.delay.ms`, `client.simulator.step.ms` | train client (M2) |
 | `nio.tcp.enabled`, `nio.tcp.port`, `nio.selector.timeout.ms` | NIO server (M1) |

@@ -28,7 +28,7 @@
 config/                         all ports/hosts/timeouts (smartrail.properties) + railway model
 src/main/java/com/smartrail/
   common/   SHARED, frozen      config · protocol · model · service (interfaces) · resource · log
-  app/      SHARED launchers    ServerApp · TrainClientApp · ControllerApp · ControlCenterApp (M2)
+  app/      SHARED launchers    ServerApp · TrainClientApp (headless) · ControlCenterApp (the one window, M3)
   nio/ coordination/            Member 1  Java NIO server + coordination
   tcpclient/                    Member 2  TCP client + InetAddress
   udp/ multicast/ heartbeat/    Member 3  UDP · multicast · heartbeat

@@ -16,7 +16,7 @@ Files marked **(new)** below do not exist yet: they are the Control Center UI fi
 | `common/service/*.java` | cross-member interfaces + `ServerContext` |
 | `common/resource/*.java` | resource MIME types, paths, codec, resolver |
 | `common/log/EventLog.java` | event log |
-| `app/ServerApp.java`, `TrainClientApp.java`, `ControllerApp.java` | launchers / wiring (`ControlCenterApp.java` is M3's) |
+| `app/ServerApp.java`, `TrainClientApp.java` | headless launchers (`ControlCenterApp.java` is M3's; it is the only window) |
 | `ui/shell/UiThreads.java` | EDT / background helper |
 | `config/*.properties`, `pom.xml`, `scripts/run.sh`, `AGENTS.md`, `CLAUDE.md`, `docs/architecture.md`, `docs/protocol.md`, `docs/configuration.md`, `docs/ui/*.md` | project contracts |
 | `src/test/java/com/smartrail/testsupport/*`, `src/test/java/com/smartrail/common/**` | shared test support |
@@ -48,7 +48,6 @@ Files marked **(new)** below do not exist yet: they are the Control Center UI fi
 | `tcpclient/TrainClient.java` | TCP client, I/O streams, reader thread, reconnect |
 | `tcpclient/TrainClientListener.java` | client callbacks |
 | `tcpclient/TrainSimulator.java` | request/response driven train behaviour |
-| `ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java` | legacy window shells (LAN run) |
 | `ui/panels/TcpClientPanel.java` | train connection panel |
 | `ui/panels/TrainsPanel.java` | Trains screen + per-train child-process consoles |
 | tests: `tcpclient/*Test` · doc: `docs/modules/m2-tcp-client.md` | |

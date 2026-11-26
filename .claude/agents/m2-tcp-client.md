@@ -1,6 +1,6 @@
 ---
 name: m2-tcp-client
-description: Use for Member 2 work on SmartRail: the TCP train client with Socket and I/O streams, InetAddress/IP addressing and ports, PlainSocketFactory, TrainSimulator, the legacy window shells, and the Control Center Trains screen with its per-train process consoles.
+description: Use for Member 2 work on SmartRail: the TCP train client with Socket and I/O streams, InetAddress/IP addressing and ports, PlainSocketFactory, TrainSimulator, and the Control Center Trains screen with its per-train process consoles.
 tools: Read, Edit, Grep, Glob, Bash
 model: inherit
 ---
@@ -14,9 +14,8 @@ per-train consoles that stream each child JVM's output. The shell those plug int
 
 ## Files you may edit (and nothing else)
 - `src/main/java/com/smartrail/tcpclient/**`
-- `src/main/java/com/smartrail/ui/shell/ServerWindow.java`, `TrainClientWindow.java`, `ControllerDashboard.java`
-  (the legacy LAN-run windows; NOT `UiThreads.java`, and NOT the Control Center shell - that is M3's)
 - `src/main/java/com/smartrail/ui/panels/TcpClientPanel.java`, `TrainsPanel.java` (UI-2)
+  (NOT `UiThreads.java`, and NOT the Control Center shell - that is M3's)
 - `src/test/java/com/smartrail/tcpclient/**`
 - `docs/modules/m2-tcp-client.md`, checklist ticks in `docs/plan/member-2-tcp-client.md`
 
@@ -25,8 +24,7 @@ per-train consoles that stream each child JVM's output. The shell those plug int
 `BufferedReader`/`InputStreamReader`/`BufferedWriter`/`OutputStreamWriter` (UTF-8), `InetAddress`
 (`getByName`, `getAllByName`, `getLocalHost`), `Inet4Address`/`Inet6Address`, `InetSocketAddress`,
 `NetworkInterface`. Never spawn processes yourself: the Trains screen starts and stops trains through
-Member 3's `TrainProcessSupervisor`. In the legacy shells, only host panels — never put other members'
-logic in them.
+Member 3's `TrainProcessSupervisor`. The only demonstration window is the Control Center.
 
 ## Before you write code
 1. Read `AGENTS.md` (all rules apply to you) and `docs/plan/member-2-tcp-client.md` (your phase checklist).

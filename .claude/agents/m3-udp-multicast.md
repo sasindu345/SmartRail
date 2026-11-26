@@ -20,11 +20,10 @@ from buttons instead of terminals. **UI-0 blocks the other four members' screens
 - `src/main/java/com/smartrail/ui/panels/UdpMulticastPanel.java` (the Network screen), `AlertsPanel.java` (UI-3)
 - `src/main/java/com/smartrail/app/ControlCenterApp.java` (UI-0)
 - `src/main/java/com/smartrail/ui/shell/ControlCenterWindow.java`, `SimulationController.java`,
-  `TrainProcessSupervisor.java` (UI-0; NOT `UiThreads.java`, NOT the legacy windows - those are M2's)
+  `TrainProcessSupervisor.java` (UI-0; NOT `UiThreads.java`). There is no second window.
 - `src/main/java/com/smartrail/ui/theme/**`, `src/main/java/com/smartrail/ui/components/**` (UI-0)
-- The four approved frozen-file changes for UI-0 (`docs/ui/control-center-spec.md` section 7): FlatLaf in
-  `pom.xml`, `ui.train.window.enabled` in `config/smartrail.properties` + `ConfigKeys`, the guard in
-  `app/TrainClientApp.java`, the `controlcenter` role in `scripts/run.sh`
+- The approved frozen-file changes for UI-0 (`docs/ui/control-center-spec.md` section 7): FlatLaf in
+  `pom.xml` and the `controlcenter` role in `scripts/run.sh`. Train clients stay headless.
 - `src/test/java/com/smartrail/udp/**`, `multicast/**`, `heartbeat/**`
 - `docs/modules/m3-udp-multicast.md`, checklist ticks in `docs/plan/member-3-udp-multicast-heartbeat.md`
 

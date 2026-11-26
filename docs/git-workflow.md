@@ -7,7 +7,7 @@
 
 ## Why conflicts stay low
 - Each member edits only their own packages (`docs/ownership.md`).
-- `ServerApp`, `TrainClientApp`, `ControllerApp` already wire every module, so no one needs to edit them.
+- `ServerApp` and `TrainClientApp` already wire every module and stay headless. The only window is `ControlCenterApp`.
 - Cross-module calls go through the frozen interfaces in `common/service`.
 - Each member has their own test classes, panel, module doc and plan file.
 
