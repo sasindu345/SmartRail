@@ -124,6 +124,13 @@ class RailwayAdminServiceTest {
         assertTrue(hasTestEntry, "Event log should contain the logged message");
     }
 
+    @Test
+    void rmiHandlerPanelInitializesCleanly() {
+        com.smartrail.ui.panels.RmiHandlerPanel panel = new com.smartrail.ui.panels.RmiHandlerPanel(config);
+        assertNotNull(panel);
+        assertTrue(panel.getComponentCount() > 0);
+    }
+
     private static int findFreePort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
