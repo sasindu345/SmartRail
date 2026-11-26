@@ -9,16 +9,21 @@ import java.net.Socket;
 
 /**
  * OWNER: Member 2 - CONCEPT: TCP client socket.
- * <ul>
- *   <li>TODO(M2) new Socket(); socket.connect(address, timeoutMs); setTcpNoDelay; setKeepAlive</li>
- * </ul>
- * Member 4's TlsSocketFactory implements the same interface for the secure channel.
+ *
+ * <p>Opens one plain {@link Socket} to the NIO server. The connect timeout comes from the caller
+ * ({@code client.connect.timeout.ms}). TCP_NODELAY and keep-alive keep short protocol lines moving
+ * and let a dead server be noticed. Member 4's {@code TlsSocketFactory} implements the same
+ * interface for the secure channel.
  */
 public final class PlainSocketFactory implements ClientSocketFactory {
 
     @Override
     public Socket connect(InetSocketAddress address, int timeoutMs) throws IOException {
-        throw new UnsupportedOperationException("TODO(M2): plain TCP connect to " + address);
+        Socket socket = new Socket();
+        socket.connect(address, timeoutMs);
+        socket.setTcpNoDelay(true);
+        socket.setKeepAlive(true);
+        return socket;
     }
 
     @Override
