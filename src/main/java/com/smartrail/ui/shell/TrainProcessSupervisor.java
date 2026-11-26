@@ -64,6 +64,13 @@ public final class TrainProcessSupervisor {
      * @throws IOException if the process could not be started
      */
     public synchronized Process startTrain(String trainId, boolean tls) throws IOException {
+        return startTrain(trainId, tls, null);
+    }
+
+    /**
+     * @param startStation station the child registers at, or {@code null} for the configured start
+     */
+    public synchronized Process startTrain(String trainId, boolean tls, String startStation) throws IOException {
         Process existing = processes.get(trainId);
         if (existing != null && existing.isAlive()) {
             notifyOutput(trainId, "[SUPERVISOR] Train " + trainId + " is already running.");
@@ -83,6 +90,9 @@ public final class TrainProcessSupervisor {
         String trainPort = System.getProperty("nio.tcp.port");
         if (trainPort != null && !trainPort.isBlank()) {
             command.add("-Dnio.tcp.port=" + trainPort);
+        }
+        if (startStation != null && !startStation.isBlank()) {
+            command.add("-Dsmartrail.journey.start=" + startStation);
         }
         command.add("com.smartrail.app.TrainClientApp");
         command.add(trainId);
