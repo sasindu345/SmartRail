@@ -2,15 +2,13 @@ package com.smartrail.coordination;
 
 import com.smartrail.common.config.RailwayData;
 import com.smartrail.common.model.RouteInfo;
+import com.smartrail.common.protocol.Message;
+import com.smartrail.common.protocol.MessageType;
 
 import java.util.Optional;
 
 /**
- * OWNER: Member 1 - CONCEPT: server assigns predefined routes (ASSIGN_ROUTE message).
- * <ul>
- *   <li>TODO(M1) return the route for a train from RailwayData</li>
- *   <li>TODO(M1) build the ASSIGN_ROUTE|trainId|routeId|SEC_A,SEC_B message after REGISTER_OK</li>
- * </ul>
+ * OWNER: Member 1 - CONCEPT: the server assigns predefined routes ({@code ASSIGN_ROUTE}).
  */
 public final class RouteService {
 
@@ -21,6 +19,16 @@ public final class RouteService {
     }
 
     public Optional<RouteInfo> routeFor(String trainId) {
-        throw new UnsupportedOperationException("TODO(M1): route lookup for " + trainId + " in " + data.routes().size() + " routes");
+        return data.train(trainId).flatMap(train -> data.route(train.routeId()));
+    }
+
+    /** {@code ASSIGN_ROUTE|trainId|routeId|SEC_A,SEC_B} for the train's predefined route. */
+    public Optional<Message> assignment(String trainId) {
+        return routeFor(trainId).map(route -> Message.of(MessageType.ASSIGN_ROUTE, trainId, route.routeId(),
+                String.join(",", route.sectionIds())));
+    }
+
+    public boolean isOnRoute(String trainId, String sectionId) {
+        return routeFor(trainId).map(route -> route.sectionIds().contains(sectionId)).orElse(false);
     }
 }
