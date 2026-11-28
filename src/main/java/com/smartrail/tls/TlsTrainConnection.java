@@ -2,16 +2,20 @@ package com.smartrail.tls;
 
 import com.smartrail.common.model.Transport;
 import com.smartrail.common.protocol.Message;
+import com.smartrail.common.protocol.ProtocolCodec;
 import com.smartrail.common.service.TrainConnection;
 
 import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * OWNER: Member 4 - CONCEPT: TLS-protected connection to one train.
- * <ul>
- *   <li>TODO(M4) send(): synchronized write of ProtocolCodec.toWireBytes(message) + flush</li>
- *   <li>TODO(M4) remoteAddress(): socket.getRemoteSocketAddress()</li>
- * </ul>
+ *
+ * <p>
+ * Thread-safe send: synchronized on the output stream so concurrent server
+ * commands
+ * (SECTION_GRANTED, HOLD, etc.) cannot interleave bytes on the wire.
  */
 public final class TlsTrainConnection implements TrainConnection {
 
@@ -22,13 +26,20 @@ public final class TlsTrainConnection implements TrainConnection {
     }
 
     @Override
-    public void send(Message message) {
-        throw new UnsupportedOperationException("TODO(M4): write over TLS " + message);
+    public synchronized void send(Message message) {
+        try {
+            OutputStream out = socket.getOutputStream();
+            out.write(ProtocolCodec.toWireBytes(message));
+            out.flush();
+        } catch (IOException e) {
+            // close so isOpen() returns false; caller must not retry on a dead socket
+            close();
+        }
     }
 
     @Override
     public String remoteAddress() {
-        throw new UnsupportedOperationException("TODO(M4): remote address");
+        return socket.getRemoteSocketAddress().toString();
     }
 
     @Override
@@ -43,6 +54,9 @@ public final class TlsTrainConnection implements TrainConnection {
 
     @Override
     public void close() {
-        // TODO(M4): close socket
+        try {
+            socket.close();
+        } catch (IOException ignored) {
+        }
     }
 }

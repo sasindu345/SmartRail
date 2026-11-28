@@ -14,10 +14,58 @@ cd "$(dirname "$0")/.."
 : "${SMARTRAIL_TRUSTSTORE_PASSWORD:?export SMARTRAIL_TRUSTSTORE_PASSWORD first}"
 [ $# -ge 1 ] || { echo "usage: $0 <host-or-ip> [more hosts/ips...]" >&2; exit 1; }
 
-# TODO(M4): build the SAN list from "$@" (dns:name for host names, ip:addr for IPs)
-# TODO(M4): keytool -genkeypair  -> certs/server-keystore.p12 (RSA 2048 or EC, validity from an argument/env, -ext SAN=...)
-# TODO(M4): keytool -exportcert  -> temporary server certificate
-# TODO(M4): keytool -importcert  -> certs/client-truststore.p12 (-noprompt)
-# TODO(M4): also create an UNTRUSTED second keystore for the "untrusted certificate is rejected" demo
-echo "TODO(M4): implement certificate generation" >&2
-exit 1
+# Build SAN list: dns:name for hostnames, ip:addr for IPv4/IPv6 literals
+SAN=""
+for arg in "$@"; do
+    if [[ $arg =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || [[ $arg =~ .*:.* ]]; then
+        entry="ip:$arg"
+    else
+        entry="dns:$arg"
+    fi
+    SAN="${SAN:+$SAN,}$entry"
+done
+
+mkdir -p certs
+
+echo "[M4] Generating server keystore (SAN=$SAN)..."
+keytool -genkeypair \
+  -alias server \
+  -keyalg RSA -keysize 2048 \
+  -validity 365 \
+  -dname "CN=SmartRail Dev, O=SmartRail, C=LK" \
+  -ext "SAN=$SAN" \
+  -storetype PKCS12 \
+  -keystore certs/server-keystore.p12 \
+  -storepass "${SMARTRAIL_KEYSTORE_PASSWORD}" \
+  -keypass  "${SMARTRAIL_KEYSTORE_PASSWORD}" 2>/dev/null
+
+echo "[M4] Exporting server cert..."
+keytool -exportcert \
+  -alias server \
+  -keystore certs/server-keystore.p12 \
+  -storepass "${SMARTRAIL_KEYSTORE_PASSWORD}" \
+  -file certs/server.cer 2>/dev/null
+
+echo "[M4] Building client truststore..."
+keytool -importcert \
+  -alias server \
+  -file certs/server.cer \
+  -storetype PKCS12 \
+  -keystore certs/client-truststore.p12 \
+  -storepass "${SMARTRAIL_TRUSTSTORE_PASSWORD}" \
+  -noprompt 2>/dev/null
+
+rm -f certs/server.cer
+
+echo "[M4] Generating untrusted keystore (for rejection demo)..."
+keytool -genkeypair \
+  -alias untrusted \
+  -keyalg RSA -keysize 2048 \
+  -validity 365 \
+  -dname "CN=Untrusted Rogue CA, O=Rogue, C=LK" \
+  -storetype PKCS12 \
+  -keystore certs/untrusted-keystore.p12 \
+  -storepass "${SMARTRAIL_KEYSTORE_PASSWORD}" \
+  -keypass  "${SMARTRAIL_KEYSTORE_PASSWORD}" 2>/dev/null
+
+echo "[M4] Done. Files in certs/: server-keystore.p12, client-truststore.p12, untrusted-keystore.p12"
