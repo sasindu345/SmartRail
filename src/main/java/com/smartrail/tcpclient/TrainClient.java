@@ -14,6 +14,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -39,11 +40,13 @@ public final class TrainClient {
     private final ServerAddressResolver resolver = new ServerAddressResolver();
     private final List<TrainClientListener> listeners = new CopyOnWriteArrayList<>();
     private final Object connectLock = new Object();
+    private final Object stateLock = new Object();
     private final Object writeLock = new Object();
 
-    private Socket socket;
-    private BufferedWriter writer;
+    private volatile Socket socket;
+    private volatile BufferedWriter writer;
     private volatile boolean closed;
+    private volatile boolean connected;
     private String connectedHost;
     private int connectedPort;
 
@@ -62,7 +65,9 @@ public final class TrainClient {
     }
 
     public void addListener(TrainClientListener listener) {
-        listeners.add(listener);
+        if (listener != null) {
+            listeners.add(listener);
+        }
     }
 
     /**
@@ -75,8 +80,10 @@ public final class TrainClient {
             if (closed || isConnected()) {
                 return;
             }
-            connectedHost = host;
-            connectedPort = port;
+            synchronized (stateLock) {
+                connectedHost = host;
+                connectedPort = port;
+            }
             int attempts = Math.max(1, config.getInt(ConfigKeys.CLIENT_RECONNECT_ATTEMPTS));
             int delayMs = config.getInt(ConfigKeys.CLIENT_RECONNECT_DELAY_MS);
             for (int attempt = 1; attempt <= attempts && !closed; attempt++) {
@@ -84,9 +91,11 @@ public final class TrainClient {
                     open(host, port);
                     return;
                 } catch (IOException e) {
-                    notifyError(failure(host, port, e));
+                    if (!closed) {
+                        notifyError(failure(host, port, e));
+                    }
                     if (attempt < attempts && !closed) {
-                        sleep(delayMs);
+                        waitBeforeRetry(delayMs);
                     }
                 }
             }
@@ -111,40 +120,73 @@ public final class TrainClient {
     }
 
     public boolean isConnected() {
-        Socket current = socket;
-        return current != null && current.isConnected() && !current.isClosed();
+        synchronized (stateLock) {
+            Socket current = socket;
+            return connected && current != null && current.isConnected() && !current.isClosed();
+        }
     }
 
     public void disconnect() {
-        synchronized (connectLock) {
-            closed = true;
-            closeSocket();
+        closed = true;
+        boolean wasConnected;
+        synchronized (stateLock) {
+            wasConnected = connected;
+            connected = false;
+            closeSocketLocked();
+            stateLock.notifyAll();
         }
-        notifyDisconnected("disconnected");
+        if (wasConnected) {
+            notifyDisconnected("disconnected");
+        }
     }
 
     private void open(String host, int port) throws IOException {
         InetAddress address = resolver.resolve(host);
+        System.out.println("[TRAIN] resolved " + host + " -> " + resolver.describe(address));
         int timeoutMs = config.getInt(ConfigKeys.CLIENT_CONNECT_TIMEOUT_MS);
         Socket opened = socketFactory.connect(new InetSocketAddress(address, port), timeoutMs);
-        opened.setSoTimeout(timeoutMs);
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(opened.getOutputStream(), ProtocolCodec.CHARSET));
-        BufferedReader in = new BufferedReader(new InputStreamReader(opened.getInputStream(), ProtocolCodec.CHARSET));
-        socket = opened;
-        writer = out;
         try {
-            send(Message.of(MessageType.REGISTER, train.trainId(), train.startStationId()));
-        } catch (RuntimeException e) {
-            closeSocket();
-            throw new IOException(e.getMessage(), e);
+            opened.setSoTimeout(timeoutMs);
+            if (closed) {
+                closeQuietly(opened);
+                return;
+            }
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(opened.getOutputStream(), ProtocolCodec.CHARSET));
+            BufferedReader in = new BufferedReader(new InputStreamReader(opened.getInputStream(), ProtocolCodec.CHARSET));
+            synchronized (stateLock) {
+                if (closed) {
+                    closeQuietly(opened);
+                    return;
+                }
+                socket = opened;
+                writer = out;
+            }
+            try {
+                send(Message.of(MessageType.REGISTER, train.trainId(), train.startStationId()));
+            } catch (RuntimeException e) {
+                synchronized (stateLock) {
+                    closeSocketLocked();
+                }
+                throw new IOException(e.getMessage(), e);
+            }
+            synchronized (stateLock) {
+                if (closed) {
+                    closeSocketLocked();
+                    return;
+                }
+                connected = true;
+            }
+            Thread reader = new Thread(() -> readLoop(in, opened), "train-reader-" + train.trainId());
+            reader.setDaemon(true);
+            reader.start();
+            notifyConnected(formatEndpoint(address, port));
+        } catch (IOException e) {
+            closeQuietly(opened);
+            throw e;
         }
-        Thread reader = new Thread(() -> readLoop(in), "train-reader-" + train.trainId());
-        reader.setDaemon(true);
-        reader.start();
-        notifyConnected(address.getHostAddress() + ":" + port);
     }
 
-    private void readLoop(BufferedReader in) {
+    private void readLoop(BufferedReader in, Socket activeSocket) {
         boolean dropped = false;
         try {
             while (!closed) {
@@ -164,7 +206,7 @@ public final class TrainClient {
                         listener.onMessage(message);
                     }
                 } catch (ProtocolException e) {
-                    notifyError(e.getMessage());
+                    notifyError("Malformed message ignored: " + e.getMessage());
                 }
             }
         } catch (IOException e) {
@@ -173,14 +215,23 @@ public final class TrainClient {
                 notifyError("Connection lost: " + e.getMessage());
             }
         } finally {
-            synchronized (connectLock) {
-                if (dropped) {
-                    closeSocket();
+            boolean notifyDrop = false;
+            String hostToReconnect = null;
+            int portToReconnect = 0;
+            synchronized (stateLock) {
+                if (dropped && socket == activeSocket) {
+                    notifyDrop = connected;
+                    connected = false;
+                    closeSocketLocked();
+                    hostToReconnect = connectedHost;
+                    portToReconnect = connectedPort;
                 }
             }
-            if (dropped) {
+            if (notifyDrop) {
                 notifyDisconnected("connection closed");
-                Thread reconnect = new Thread(() -> connect(connectedHost, connectedPort),
+                String targetHost = hostToReconnect;
+                int targetPort = portToReconnect;
+                Thread reconnect = new Thread(() -> connect(targetHost, targetPort),
                         "train-reconnect-" + train.trainId());
                 reconnect.setDaemon(true);
                 reconnect.start();
@@ -188,13 +239,17 @@ public final class TrainClient {
         }
     }
 
-    private void closeSocket() {
+    private void closeSocketLocked() {
         Socket current = socket;
         socket = null;
         writer = null;
-        if (current != null) {
+        closeQuietly(current);
+    }
+
+    private static void closeQuietly(Socket target) {
+        if (target != null) {
             try {
-                current.close();
+                target.close();
             } catch (IOException ignored) {
                 // Closing a failed socket is best-effort.
             }
@@ -219,6 +274,11 @@ public final class TrainClient {
         }
     }
 
+    private static String formatEndpoint(InetAddress address, int port) {
+        String hostAddress = address.getHostAddress();
+        return address instanceof Inet6Address ? "[" + hostAddress + "]:" + port : hostAddress + ":" + port;
+    }
+
     private static String failure(String host, int port, IOException error) {
         if (error instanceof UnknownHostException) {
             return error.getMessage();
@@ -226,15 +286,31 @@ public final class TrainClient {
         if (error instanceof SocketTimeoutException) {
             return "Timed out connecting to " + host + ":" + port;
         }
-        String detail = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
+        String detail = error.getMessage();
+        if (detail == null || detail.isBlank()) {
+            detail = "connection failed";
+        }
         return "Could not connect to " + host + ":" + port + " (" + detail + ")";
     }
 
-    private static void sleep(int delayMs) {
-        try {
-            Thread.sleep(Math.max(0, delayMs));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    private void waitBeforeRetry(int delayMs) {
+        if (delayMs <= 0) {
+            return;
+        }
+        synchronized (stateLock) {
+            long deadline = System.currentTimeMillis() + delayMs;
+            while (!closed) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) {
+                    break;
+                }
+                try {
+                    stateLock.wait(remaining);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 }

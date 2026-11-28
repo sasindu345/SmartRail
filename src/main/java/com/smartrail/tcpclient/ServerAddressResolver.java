@@ -42,8 +42,20 @@ public final class ServerAddressResolver {
         }
     }
 
+    /** Returns this host's primary address via {@link InetAddress#getLocalHost()}. */
+    public InetAddress localHost() throws UnknownHostException {
+        try {
+            return InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            throw new UnknownHostException("Local host could not be resolved: " + e.getMessage());
+        }
+    }
+
     /** e.g. "192.168.1.20 (IPv4, site-local/private)". */
     public String describe(InetAddress address) {
+        if (address == null) {
+            throw new IllegalArgumentException("Address must not be null");
+        }
         String family = address instanceof Inet6Address ? "IPv6" : address instanceof Inet4Address ? "IPv4" : "IP";
         return address.getHostAddress() + " (" + family + ", " + kind(address) + ")";
     }
