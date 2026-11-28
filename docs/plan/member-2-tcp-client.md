@@ -13,26 +13,26 @@ resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 **Agent:** `.claude/agents/m2-tcp-client.md` · **Branch prefix:** `m2/`
 
 ## Phase 0 — Setup
-- [ ] Clone, JDK 21, `mvn verify` green; create branch `m2/tcp-client`
-- [ ] Read `AGENTS.md`, `docs/protocol.md` §1, `TrainClientApp`, `ClientSocketFactory`
+- [x] Clone, JDK 21, `mvn verify` green; create branch `m2/tcp-client`
+- [x] Read `AGENTS.md`, `docs/protocol.md` §1, `TrainClientApp`, `ClientSocketFactory`
 - [ ] Agree with M3 how discovery hands over host/port (`TcpClientPanel.useDiscoveredServer`)
 
 ## Phase 1 — IP addressing + TCP connect
-- [ ] `ServerAddressResolver.resolve/resolveAll` (host names and literal IPv4/IPv6)
-- [ ] `describe`: IPv4/IPv6, loopback, site-local (private), link-local, multicast
-- [ ] `localInterfaceAddresses` via `NetworkInterface` (name + addresses, up interfaces only)
-- [ ] `PlainSocketFactory.connect`: `Socket.connect(addr, timeout)`, `setTcpNoDelay`, `setKeepAlive`
+- [x] `ServerAddressResolver.resolve/resolveAll` (host names and literal IPv4/IPv6)
+- [x] `describe`: IPv4/IPv6, loopback, site-local (private), link-local, multicast
+- [x] `localInterfaceAddresses` via `NetworkInterface` (name + addresses, up interfaces only)
+- [x] `PlainSocketFactory.connect`: `Socket.connect(addr, timeout)`, `setTcpNoDelay`, `setKeepAlive`
 - [ ] Manual proof: connect `TrainClient` to `nc -l 5000` and see `REGISTER|TR01|ST01` arrive
-- [ ] Tests: `ServerAddressResolverTest` (localhost, `::1`, unknown host)
+- [x] Tests: `ServerAddressResolverTest` (localhost, `::1`, unknown host)
 
 ## Phase 2 — Train client & simulator
-- [ ] `TrainClient.connect`: resolve → factory socket (`client.connect.timeout.ms`) → UTF-8 reader/writer → reader thread → send `REGISTER`
-- [ ] Reader thread: `readLine` → `ProtocolCodec.decode` → listeners; malformed line logged, not fatal
-- [ ] `send` thread-safe; `disconnect` closes cleanly; listeners notified once
-- [ ] Reconnect: `client.reconnect.attempts` × `client.reconnect.delay.ms`
-- [ ] Clear errors: unknown host, connection refused, timeout (no stack traces in UI)
-- [ ] `TrainSimulator`: follows `ASSIGN_ROUTE`; REQUEST_SECTION → MOVING → RELEASE previous; retries DENIED; obeys HOLD/RESUME/EMERGENCY_STOP; ARRIVED at end
-- [ ] Tests: `TrainClientTest` with an in-test `ServerSocket` on port `0` (register, decode lines, refused port, reconnect)
+- [x] `TrainClient.connect`: resolve → factory socket (`client.connect.timeout.ms`) → UTF-8 reader/writer → reader thread → send `REGISTER`
+- [x] Reader thread: `readLine` → `ProtocolCodec.decode` → listeners; malformed line logged, not fatal
+- [x] `send` thread-safe; `disconnect` closes cleanly; listeners notified once
+- [x] Reconnect: `client.reconnect.attempts` × `client.reconnect.delay.ms`
+- [x] Clear errors: unknown host, connection refused, timeout (no stack traces in UI)
+- [x] `TrainSimulator`: follows `ASSIGN_ROUTE`; REQUEST_SECTION → MOVING → RELEASE previous; retries DENIED; obeys HOLD/RESUME/EMERGENCY_STOP; ARRIVED at end
+- [x] Tests: `TrainClientTest` with an in-test `ServerSocket` on port `0` (register, decode lines, refused port, reconnect)
 
 ## Phase 3 — Integration
 - [ ] C2 with M1: plain registration + full route
@@ -51,7 +51,7 @@ resolution, IPv4 vs IPv6, private/loopback addresses, local interfaces, ports.
 - [ ] Evidence for the report: IPv4 and IPv6 resolution, a connection error message, 3 trains running
 
 ## Phase 5 — Test, docs, demo
-- [ ] Fill `docs/modules/m2-tcp-client.md`; your rows in `docs/test-plan.md`
+- [x] Fill `docs/modules/m2-tcp-client.md`; your rows in `docs/test-plan.md`
 - [ ] 2-minute demo slot (2:00–4:00): resolve, connect, register, position update, wrong-address error
 - [ ] Report section: client-server model, IP/ports, private vs public addressing, IPv4/IPv6
 

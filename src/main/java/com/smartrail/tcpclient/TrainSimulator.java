@@ -50,7 +50,7 @@ public final class TrainSimulator implements TrainClientListener {
         });
     }
 
-    public void start() {
+    public synchronized void start() {
         if (started) {
             return;
         }
@@ -59,7 +59,7 @@ public final class TrainSimulator implements TrainClientListener {
         scheduler.scheduleWithFixedDelay(this::tick, stepMs, stepMs, TimeUnit.MILLISECONDS);
     }
 
-    public void stop() {
+    public synchronized void stop() {
         scheduler.shutdownNow();
     }
 
@@ -84,17 +84,25 @@ public final class TrainSimulator implements TrainClientListener {
                 }
             }
             case SECTION_GRANTED -> {
-                if (message.field(1).equals(pendingSection) && phase == Phase.REQUESTED) {
-                    phase = Phase.GRANTED;
+                if (message.field(1).equals(pendingSection)) {
+                    if (phase == Phase.REQUESTED) {
+                        phase = Phase.GRANTED;
+                    } else if ((phase == Phase.HELD || phase == Phase.EMERGENCY) && resumePhase == Phase.REQUESTED) {
+                        resumePhase = Phase.GRANTED;
+                    }
                 }
             }
             case SECTION_DENIED -> {
-                if (message.field(1).equals(pendingSection) && phase == Phase.REQUESTED) {
-                    phase = Phase.DENIED;
+                if (message.field(1).equals(pendingSection)) {
+                    if (phase == Phase.REQUESTED) {
+                        phase = Phase.DENIED;
+                    } else if ((phase == Phase.HELD || phase == Phase.EMERGENCY) && resumePhase == Phase.REQUESTED) {
+                        resumePhase = Phase.DENIED;
+                    }
                 }
             }
             case HOLD -> {
-                if (phase != Phase.HELD && phase != Phase.ARRIVED) {
+                if (phase != Phase.HELD && phase != Phase.EMERGENCY && phase != Phase.ARRIVED) {
                     resumePhase = phase;
                     phase = Phase.HELD;
                 }
@@ -105,7 +113,7 @@ public final class TrainSimulator implements TrainClientListener {
                 }
             }
             case EMERGENCY_STOP -> {
-                if (phase != Phase.ARRIVED) {
+                if (phase != Phase.ARRIVED && phase != Phase.EMERGENCY) {
                     resumePhase = phase == Phase.HELD ? resumePhase : phase;
                     phase = Phase.EMERGENCY;
                 }

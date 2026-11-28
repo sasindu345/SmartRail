@@ -6,6 +6,7 @@ import com.smartrail.common.service.ClientSocketFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Objects;
 
 /**
  * OWNER: Member 2 - CONCEPT: TCP client socket.
@@ -19,11 +20,21 @@ public final class PlainSocketFactory implements ClientSocketFactory {
 
     @Override
     public Socket connect(InetSocketAddress address, int timeoutMs) throws IOException {
+        Objects.requireNonNull(address, "address must not be null");
         Socket socket = new Socket();
-        socket.connect(address, timeoutMs);
-        socket.setTcpNoDelay(true);
-        socket.setKeepAlive(true);
-        return socket;
+        try {
+            socket.connect(address, Math.max(0, timeoutMs));
+            socket.setTcpNoDelay(true);
+            socket.setKeepAlive(true);
+            return socket;
+        } catch (IOException e) {
+            try {
+                socket.close();
+            } catch (IOException suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
+        }
     }
 
     @Override
