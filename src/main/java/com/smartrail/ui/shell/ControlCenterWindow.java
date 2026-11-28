@@ -14,6 +14,7 @@ import com.smartrail.ui.panels.AlertsPanel;
 import com.smartrail.ui.panels.EventLogPanel;
 import com.smartrail.ui.panels.NioServerPanel;
 import com.smartrail.ui.panels.RmiHandlerPanel;
+import com.smartrail.ui.panels.TlsResourcePanel;
 import com.smartrail.ui.panels.TrackSectionsPanel;
 import com.smartrail.ui.panels.UdpMulticastPanel;
 import com.smartrail.ui.theme.Theme;
@@ -453,38 +454,8 @@ public final class ControlCenterWindow extends JFrame {
     }
 
     private JPanel createSecurityScreen() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        Card card = new Card("TLS and HTTP");
-        JTextArea text = new JTextArea();
-        text.setEditable(false);
-        text.setLineWrap(true);
-        text.setWrapStyleWord(true);
-        text.setFont(Theme.FONT_BODY);
-        text.setForeground(Theme.TEXT);
-        text.setBackground(Theme.SURFACE);
-        card.setBody(new JScrollPane(text));
-        controller.addStatusListener(states -> UiThreads.onEdt(() -> text.setText(securityText(states))));
-        panel.add(card, BorderLayout.CENTER);
-        return panel;
-    }
-
-    private static String securityText(Map<String, SimulationController.ServiceState> states) {
-        return serviceSentence("TLS", states.get(NetworkStatusBar.SERVICE_TLS))
-                + "\n\n"
-                + serviceSentence("HTTP", states.get(NetworkStatusBar.SERVICE_HTTP));
-    }
-
-    private static String serviceSentence(String name, SimulationController.ServiceState state) {
-        if (state == null || state.status() == NetworkStatusBar.ServiceStatus.STOPPED) {
-            return name + " has not been started.";
-        }
-        if (state.status() == NetworkStatusBar.ServiceStatus.FAILED) {
-            String reason = state.endpointOrError() == null ? "it failed to start" : state.endpointOrError();
-            return name + " is not available. " + reason;
-        }
-        String endpoint = state.endpointOrError() == null ? "" : " " + state.endpointOrError();
-        return name + " is listening." + endpoint;
+        // M4 / UI-4 — TlsResourcePanel is the Security screen (control-center-spec.md §4.6)
+        return new TlsResourcePanel(controller);
     }
 
     private JPanel createAdminScreen() {
